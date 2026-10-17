@@ -155,7 +155,9 @@ void DistributedTreeImpl::phaseII(ExecutionSpace const &space, Tree const &tree,
   // rather than nearest predicates.
   Kokkos::View<PairValueDistance<typename Values::value_type, Coordinate> *,
                MemorySpace>
-      out(prefix + "::pairs_value_distance", 0);
+      out(Kokkos::view_alloc(Kokkos::WithoutInitializing,
+                             prefix + "::pairs_value_distance"),
+          0);
   DistributedTree::forwardQueriesAndCommunicateResults(
       tree.getComm(), space, bottom_tree, predicates,
       CallbackWithDistance<BottomTree, Callback, typename Values::value_type,
