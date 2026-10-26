@@ -40,7 +40,8 @@ void filterOutEmptyRanks(ExecutionSpace const &space,
   Kokkos::resize(Kokkos::view_alloc(space, Kokkos::WithoutInitializing),
                  attached_volumes, n);
 
-  int num_nonempty;
+  // FIXME(Kokkos < 5.3): kokkos/kokkos#9319
+  int num_nonempty = 0;
   Kokkos::parallel_scan(
       "ArborX::DistributedTree::DistributedTree::top_tree_skip_empty_ranks",
       Kokkos::RangePolicy<ExecutionSpace>(space, 0, n),

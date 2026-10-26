@@ -103,7 +103,8 @@ void dbscan(MPI_Comm comm, ExecutionSpace const &space,
       Kokkos::subview(labels, Kokkos::make_pair(n_local, n_local + n_ghost)));
   Kokkos::resize(space, labels, n_local);
   // Avoid communicating noise points
-  int num_compressed;
+  // FIXME(Kokkos < 5.3): kokkos/kokkos#9319
+  int num_compressed = 0;
   Kokkos::parallel_scan(
       prefix + "compress", Kokkos::RangePolicy(space, 0, n_ghost),
       KOKKOS_LAMBDA(int i, int &update, bool is_final) {
