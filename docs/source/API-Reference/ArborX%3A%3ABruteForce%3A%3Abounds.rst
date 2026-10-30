@@ -3,13 +3,13 @@
 :doc:`ArborX </index>` / :doc:`Spatial indexes <SpatialIndexes>` / :doc:`ArborX::BruteForce <ArborX%3A%3ABruteForce>`
 
 
-``ArborX::BruteForce<MemorySpace>::bounds()``
-=============================================
+``ArborX::BruteForce<MemorySpace, Value, IndexableGetter, BoundingVolume>::bounds()``
+=====================================================================================
 .. code-block:: C++
 
-    KOKKOS_FUNCTION Box bounds() const noexcept;
+    KOKKOS_FUNCTION bounding_volume_type bounds() const noexcept;
 
-Returns the smallest axis-aligned box able to contain all elements stored in the data structure.
+Returns a bounding volume of type ``BoundingVolume`` that contains all indexed values.
 
 
 Parameters
@@ -19,7 +19,7 @@ Parameters
 
 Return value
 ------------
-The smallest axis-aligned bounding box that contains all elements stored in the data structure or an invalid bounding volume if the data structure is empty.
+A bounding volume that contains all indexed values, or an invalid bounding volume if the data structure is empty.
 
 
 Complexity

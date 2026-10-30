@@ -12,15 +12,18 @@ Defined in header `<ArborX_BruteForce.hpp> <https://github.com/arborx/ArborX/blo
 
 .. code-block:: C++
 
-    template <typename MemorySpace>
+    template <typename MemorySpace, typename Value, typename IndexableGetter, typename BoundingVolume>
     class BruteForce;
 
-The class template ``ArborX::BruteForce`` is a data structure that can be used to search for geometrical objects in space.  When performing queries, it checks all primitives against all predicates.
+The class template ``ArborX::BruteForce`` is a data structure that can be used to search for geometrical objects in space. When performing queries, it checks each indexed value against each predicate.
 
 
-Template parameter
-------------------
-* ``MemorySpace``: A valid Kokkos memory space.
+Template parameters
+-------------------
+* ``MemorySpace``: valid Kokkos memory space
+* ``Value``: type of objects stored in the container
+* ``IndexableGetter``: function extracting an indexable geometry from ``Value``
+* ``BoundingVolume``: bounding volume used for internal nodes
 
 
 Member types
@@ -34,10 +37,14 @@ Member types
      - Definition
    * - ``memory_space``
      - ``MemorySpace``
+   * - ``value_type``
+     - ``Value``
    * - ``size_type``
      - ``MemorySpace::size_type``
    * - ``bounding_volume_type``
-     - ``ArborX::Box``
+     - ``BoundingVolume``
+   * - ``indexable_getter_type``
+     - ``IndexableGetter``
 
 
 Member functions

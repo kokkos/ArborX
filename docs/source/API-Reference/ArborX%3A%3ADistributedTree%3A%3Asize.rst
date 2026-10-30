@@ -7,7 +7,7 @@
 ========================================================================================
 .. code-block:: C++
 
-    KOKKOS_FUNCTION size_type size() const noexcept;
+    size_type size() const noexcept;
 
 Returns the global number of leaves in the tree.
 

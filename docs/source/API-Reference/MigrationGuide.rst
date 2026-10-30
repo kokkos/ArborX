@@ -48,7 +48,6 @@ Migration tips
 Geometries
 ~~~~~~~~~~
 In APIv1, ``ArborX::Point`` and ``ArborX::Box`` were hardcoded to single-precision
-
 3D data. In contrast, all geometries in APIv2 are templated on both the
 dimension and the stored type:
 
@@ -120,6 +119,5 @@ and use a callback to extract the index:
 ARBORX_VERSION
 --------------
 If one desires to be able to build code against both versions of ArborX,
-
 ``ARBORX_VERSION`` macro can be used to distinguish whether the code is built
 against APIv1 (``ARBORX_VERSION < 20000``) or APIv2 (``ARBORX_VERSION >= 20000``).

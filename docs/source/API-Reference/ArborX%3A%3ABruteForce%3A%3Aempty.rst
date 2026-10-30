@@ -3,8 +3,8 @@
 :doc:`ArborX </index>` / :doc:`Spatial indexes <SpatialIndexes>` / :doc:`ArborX::BruteForce <ArborX%3A%3ABruteForce>`
 
 
-``ArborX::BruteForce<MemorySpace>::empty()``
-============================================
+``ArborX::BruteForce<MemorySpace, Value, IndexableGetter, BoundingVolume>::empty()``
+====================================================================================
 .. code-block:: C++
 
     KOKKOS_FUNCTION bool empty() const noexcept;

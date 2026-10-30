@@ -7,9 +7,9 @@ Defined in header `<ArborX_DBSCAN.hpp> <https://github.com/arborx/ArborX/blob/ma
 
 .. code-block:: C++
 
-    template <typename ExecutionSpace, typename Primitives>
-    Kokkos::View<int *, typename ArborX::AccessTraits<Primitives>::memory_space>
-    dbscan(ExecutionSpace const &space, Primitives const &primitives, float eps, int core_min_size);
+    template <typename ExecutionSpace, typename Primitives, typename Labels>
+    void dbscan(ExecutionSpace const &space, Primitives const &primitives,
+                double eps, int core_min_size, Labels &labels);
 
 The free function ``ArborX::dbscan`` performs DBSCAN (Density-Based Spatial Clustering of Applications with Noise) clustering from a set of points.
 
@@ -17,14 +17,14 @@ The free function ``ArborX::dbscan`` performs DBSCAN (Density-Based Spatial Clus
 Parameters
 ----------
 * ``space``: the execution space.
-* ``primitives``: geometrical objects one wishes to index. The return value of ``ArborX::AccessTraits<Primitives>::get()`` must decay to ``ArborX::Point``.
+* ``primitives``: points to cluster, accessed through ``ArborX::AccessTraits``.
 * ``eps``: The ``eps`` parameter in the DBSCAN algorithm, corresponding to the maximum distance between two objects to be considered in the neighborhood of each other.
 * ``core_min_size``: The ``minPts`` parameter in the DBSCAN algorithm, corresponding to the number of objects in the neighborhood for a point to be considered a core point.
+* ``labels``: a one-dimensional Kokkos view of an integral type to store the labels
 
 
 Returns
 -------
-Cluster labels for each point in the dataset. Noise points are given the label -1.
 
 
 Example
@@ -39,7 +39,7 @@ Example
     {
       Kokkos::ScopeGuard guard(argc, argv);
 
-      Kokkos::View<ArborX::Point *> cloud("point_cloud", 9);
+      Kokkos::View<ArborX::Point<3> *> cloud("point_cloud", 9);
       auto cloud_host = Kokkos::create_mirror_view(cloud);
       //     0 1 2 3 4
       //    ----------
@@ -59,7 +59,8 @@ Example
       Kokkos::deep_copy(cloud, cloud_host);
 
       using execution_space = decltype(cloud)::execution_space; // where to execute code
-      auto labels = ArborX::dbscan(execution_space{}, cloud, 1.2, 2);
+      Kokkos::View<int *> labels("labels", 0);
+      ArborX::dbscan(execution_space{}, cloud, 1.2, 2, labels);
 
       auto labels_host = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace{}, labels);
       for (int i = 0; i < (int)labels_host.size(); ++i)

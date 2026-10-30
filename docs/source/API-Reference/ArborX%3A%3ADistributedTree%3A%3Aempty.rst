@@ -7,7 +7,7 @@
 =========================================================================================
 .. code-block:: C++
 
-    KOKKOS_FUNCTION bool empty() const noexcept;
+    bool empty() const noexcept;
 
 Checks if the global tree has no leaves on all ranks.
 

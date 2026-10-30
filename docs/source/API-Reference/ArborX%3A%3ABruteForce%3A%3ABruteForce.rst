@@ -9,31 +9,35 @@
 
     BruteForce() noexcept; // (1)
 
-    template <typename ExecutionSpace, typename Primitives>
-    BruteForce(ExecutionSpace const& space, Primitives const& primitives); // (2)
+    template <typename ExecutionSpace, typename Values>
+    BruteForce(ExecutionSpace const& space, Values const& values); // (2)
 
-1) Default constructor.  Constructs an empty data structure.
-2) Constructs a bounding volume hierarchy from the given data source.
+    template <typename ExecutionSpace, typename Values>
+    BruteForce(ExecutionSpace const& space, Values const& values, IndexableGetter const& indexable_getter); // (3)
+
+1) Default constructor.  Constructs an empty tree.
+2) Constructs a brute force index from a given data source.
+3) Constructs a brute force index from a given data source and a function tranforming a value into indexable.
 
 
 Parameters
 ----------
 * ``space``: the execution space.
-* ``primitives``: geometrical objects one wishes to index.
+* ``values``: values to store in the data structure.
+* ``indexable_getter``: function object that extracts the geometry to index from a value.
 
 
 Type requirements
 ^^^^^^^^^^^^^^^^^
-* ``MemorySpace`` must be accessible from ``ExecutionSpace``. (``Kokkos::SpaceAccessibility<ExecutionSpace, MemorySpace>::accessible`` must be ``true``.)
-* A specialization of :doc:`ArborX::AccessTraits <ArborX%3A%3AAccessTraits>` must match ``Primitives`` as the first template argument.
-* The return type of ``ArborX::AccessTraits<Primitives>::get()`` must decay either to ``ArborX::Point`` or ``ArborX::Box``.
-
-ArborX provides specializations for Kokkos views but a user may specialize it for their types.
+* ``MemorySpace`` must be accessible from ``ExecutionSpace`` (i.e., ``Kokkos::SpaceAccessibility<ExecutionSpace, MemorySpace>::accessible`` must be ``true``).
+* A specialization of :doc:`ArborX::AccessTraits <ArborX%3A%3AAccessTraits>` must match ``Values`` as the template argument.
+* The return type of ``ArborX::AccessTraits<Values>::get()`` must decay to ``Value``.
+* ``IndexableGetter`` must provide an ``operator()`` taking in a type that decays to ``Value`` and returning an indexable (geometric object).
 
 
 Complexity
 ----------
-*O(N)*, where *N* is the number of primitives passed to the constructor (``ArborX::AccessTraits<Primitives>::size(primitives)``).
+*O(N)*, where *N* is the number of primitives passed to the constructor (``ArborX::AccessTraits<Values>::size(values)``).
 
 
 Exceptions
@@ -51,5 +55,5 @@ Example
 
 See also
 --------
-* :doc:`query <ArborX%3A%3ABoundingVolumeHierarchy%3A%3Aquery>`: search for all primitives that meet some predicates.
-* :doc:`bounds <ArborX%3A%3ABoundingVolumeHierarchy%3A%3Abounds>`: returns the box that contains all leaves.
+* :doc:`query <ArborX%3A%3ABruteForce%3A%3Aquery>`: search for all primitives that meet some predicates.
+* :doc:`bounds <ArborX%3A%3ABruteForce%3A%3Abounds>`: returns the bounding volume that contains all leaves.

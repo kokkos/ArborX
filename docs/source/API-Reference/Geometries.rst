@@ -58,7 +58,7 @@ Currently, ArborX provides the following geometries:
 - ``Sphere``
 - ``Triangle``
 - ``KDOP`` [EXPERIMENTAL]
-- ``Ellipsoid`` (EXPERIMENTAL]
+- ``Ellipsoid`` [EXPERIMENTAL]
 - ``Ray`` [EXPERIMENTAL]
 - ``Segment`` [EXPERIMENTAL]
 - ``Tetrahedron`` [EXPERIMENTAL]
