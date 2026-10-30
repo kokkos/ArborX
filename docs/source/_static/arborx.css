@@ -1,0 +1,27 @@
+:root {
+  --color-brand-primary: #143c5a;
+  --color-brand-content: #087d91;
+}
+
+body[data-theme="dark"] {
+  --color-brand-primary: #67c8d3;
+  --color-brand-content: #67c8d3;
+}
+
+.sidebar-brand-text {
+  font-weight: 650;
+}
+
+[role="main"] table.member-types-table {
+  margin-left: -0.2rem;
+}
+
+[role="main"] section[id="member-functions"] table.docutils,
+[role="main"] section[id="static-member-functions"] table.docutils {
+  margin-left: -0.2rem;
+}
+
+body[data-theme="dark"] .sidebar-brand img,
+body[data-theme="dark"] .arborx-logo {
+  filter: brightness(0) invert(85%);
+}
