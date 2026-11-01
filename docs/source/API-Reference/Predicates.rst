@@ -15,6 +15,11 @@ Nearest neighbors queries
 -------------------------
 :doc:`ArborX::nearest <ArborX%3A%3Anearest>`
 
+Ordered spatial queries [experimental]
+--------------------------------------
+An experimental ordered spatial predicate is also available as
+``ArborX::Experimental::ordered_intersects(geometry)``.
+
 
 See also
 --------

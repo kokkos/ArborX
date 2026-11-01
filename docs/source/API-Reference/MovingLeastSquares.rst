@@ -1,8 +1,8 @@
 :doc:`ArborX </index>`
 
 
-``ArborX::InterpolationMovingLeastSquares``
-===========================================
+``ArborX::Interpolation::MovingLeastSquares``
+=============================================
 Defined in header `<ArborX_InterpMovingLeastSquares.hpp> <https://github.com/arborx/ArborX/blob/master/src/interpolation/ArborX_InterpMovingLeastSquares.hpp>`_
 
 .. code-block:: C++

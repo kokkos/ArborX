@@ -30,7 +30,7 @@ Template parameter
 ------------------
 * ``MemorySpace``: valid Kokkos memory space
 * ``Value``: type of objects stored in the container
-* ``IndexableGetter``: function extracting ``Indexable`` from ``Value``
+* ``IndexableGetter``: function extracting an indexable geometry from ``Value``
 * ``BoundingVolume``: bounding volume used for internal nodes
 
 

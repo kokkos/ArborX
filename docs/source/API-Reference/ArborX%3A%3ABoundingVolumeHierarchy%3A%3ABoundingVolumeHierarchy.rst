@@ -23,7 +23,6 @@
 Parameters
 ----------
 ``space``: execution space
-
 ``values``: values stored in the container
 ``indexable_getter``: a function object to transform a value into an indexable
 
@@ -33,9 +32,6 @@ Type requirements
 * ``MemorySpace`` must be accessible from ``ExecutionSpace`` (i.e., ``Kokkos::SpaceAccessibility<ExecutionSpace, MemorySpace>::accessible`` must be ``true``).
 * A specialization of :doc:`ArborX::AccessTraits <ArborX%3A%3AAccessTraits>` must match ``Values`` as the template argument.
 * The return type of ``ArborX::AccessTraits<Values>::get()`` must decay to ``Value``.
-
-  ArborX provides specializations for Kokkos views but a user may specialize it for their types.
-
 * ``IndexableGetter`` must provide an ``operator()`` taking in a type that decays to ``Value`` and returning an indexable (geometric object).
 
 
@@ -63,7 +59,7 @@ Example
 
     #include <iostream>
 
-    std::ostream &operator<<(std::ostream &os, ArborX::Point const &p)
+    std::ostream &operator<<(std::ostream &os, ArborX::Point<3> const &p)
     {
       os << '(' << p[0] << ',' << p[1] << ',' << p[2] << ')';
       return os;

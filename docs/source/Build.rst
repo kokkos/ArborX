@@ -14,6 +14,8 @@ Dependencies
 | CMake                                         | 3.22    | ✔️       |         |
 +-----------------------------------------------+---------+----------+---------+
 
+ArborX requires a C++20-capable compiler.
+
 
 Build and installation
 ----------------------
@@ -37,7 +39,7 @@ backends (Serial, OpenMP and HIP), configure it with
         -D Kokkos_ENABLE_OPENMP=ON
         -D Kokkos_ENABLE_HIP=ON
             -D Kokkos_ENABLE_HIP_MULTIPLE_KERNEL_INSTANTIATIONS=ON
-        -D Kokkos_ARCH_ZEN2=ON
+        -D Kokkos_ARCH_ZEN3=ON
         -D Kokkos_ARCH_VEGA90A=ON
         )
     cmake "${OPTIONS[@]}" "${KOKKOS_SOURCE_DIR:-../}"
@@ -172,7 +174,7 @@ Spack allows options and compilers to be turned on in the install command:
 
 .. code-block:: shell
 
-    spack install arborx@1.0 %gcc@8.1.0 ~mpi+cuda cuda_arch=70
+    spack install arborx@2.0 %gcc@13.3.0 ~mpi+cuda cuda_arch=90
 
 This example illustrates the most common parameters:
 - Variants are specified with ``~`` or ``+`` (e.g. ``+cuda``) and enable or disable certain options

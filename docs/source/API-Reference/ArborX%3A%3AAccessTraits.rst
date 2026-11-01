@@ -19,12 +19,17 @@ The struct template ``ArborX::AccessTraits`` tells the spatial index constructor
 how much data to index and how to access that data,
 or spatial index query (e.g., :doc:`ArborX::BVH::query() <ArborX%3A%3ABoundingVolumeHierarchy%3A%3Aquery>`) what predicates to query for.
 
-ArborX provides the following partial specialization for Kokkos views
+ArborX provides constrained specializations for rank-1 and rank-2 Kokkos views.
+Rank-1 views expose their element at each position. Rank-2 views expose each
+row as a point. A statically known second extent determines the point dimension;
+for a dynamic second extent, the specialization constructs a three-dimensional
+point from the first three columns.
 
 .. code-block:: C++
 
     template <typename View>
-    AccessTraits<View, std::enable_if_t<Kokkos::is_view<View>{}>>;
+      requires(Kokkos::is_view_v<View> && (View::rank() == 1 || View::rank() == 2))
+    struct AccessTraits<View>;
 
 
 Template parameters
@@ -71,7 +76,6 @@ Example
     {
       float *d_x;
       float *d_y;
-      float *d_z;
       int N;
     };
 
@@ -87,10 +91,10 @@ Example
       {
         return cloud.N;
       }
-      static KOKKOS_FUNCTION static ArborX::Point get(PointCloud const &cloud,
-                                                      std::size_t i)
+      static KOKKOS_FUNCTION auto get(PointCloud const &cloud,
+                                                  std::size_t i)
       {
-        return {{cloud.d_x[i], cloud.d_y[i], cloud.d_z[i]}};
+        return ArborX::Point{{cloud.d_x[i], cloud.d_y[i]}};
       }
       using memory_space = Kokkos::CudaSpace;
     };
@@ -104,7 +108,7 @@ Example
       }
       static KOKKOS_FUNCTION auto get(NearestToOrigin const &d, std::size_t)
       {
-        return ArborX::nearest(ArborX::Point{{0, 0, 0}}, d.k);
+        return ArborX::nearest(ArborX::Point<2>{{0, 0}}, d.k);
       }
       using memory_space = Kokkos::CudaSpace;
     };
@@ -124,15 +128,15 @@ Example
       cudaMemcpy(d_a, a.data(), sizeof(float) * N, cudaMemcpyHostToDevice);
 
       using device_type = Kokkos::Cuda::device_type;
-      ArborX::BVH<Kokkos::CudaSpace> bvh{Kokkos::Cuda{}, PointCloud{d_a, d_a, d_a, N}};
+      ArborX::BoundingVolumeHierarchy bvh{Kokkos::Cuda{}, PointCloud{d_a, d_a, N}};
 
-      Kokkos::View<int *, device_type> indices("indices", 0);
+      Kokkos::View<ArborX::Point<2> *, device_type> values("values", 0);
       Kokkos::View<int *, device_type> offset("offset", 0);
-      bvh.query(Kokkos::Cuda{}, NearestToOrigin{5}, indices, offset);
+      bvh.query(Kokkos::Cuda{}, NearestToOrigin{5}, values, offset);
 
       Kokkos::parallel_for(1, KOKKOS_LAMBDA(int i) {
         for (int j = offset(i); j < offset(i + 1); ++j)
-          printf("%i %i\n", i, indices(j));
+          printf("[%i] (%.2f, %.2f)\n", i, values(j)[0], values(j)[1]);
       });
 
       return 0;
@@ -142,11 +146,11 @@ Output
 
 .. code-block:: text
 
-    0 0
-    0 1
-    0 2
-    0 3
-    0 4
+    [0] (1.00, 1.00)
+    [0] (2.00, 2.00)
+    [0] (3.00, 3.00)
+    [0] (4.00, 4.00)
+    [0] (5.00, 5.00)
 
 .. _arborxtraitsaccessttagsize:
 
@@ -160,7 +164,7 @@ Output
 
 Parameters
 """"""""""
-* ``data``: data argument passed to the ``ArborX::BVH<MemorySpace>::BVH`` constructor or ``ArborX::BVH<MemorySpace>::query()``
+* ``data``: data passed to a spatial-index constructor or query
 
 
 Returns
@@ -185,10 +189,12 @@ If provided in a ``query``, the return value type must decay to a valid ArborX p
 
 Parameters
 """"""""""
-* ``data``: data argument passed to the ``ArborX::BVH<MemorySpace>::BVH`` constructor or ``ArborX::BVH<MemorySpace>::query()``
-* ``pos``: position of the primitive from which to return the centroid or the smallest bounding volume
+* ``data``: data passed to a spatial-index constructor or query
+* ``pos``: position of the value to access
 
 
 Returns
 """""""""
-.. rubric:: Notes
+The return type depends on the container and its use. For the data containing
+primitives, it must decay to the value type stored in the index. For the data
+containing predicates, it must decay to a valid ArborX predicate.

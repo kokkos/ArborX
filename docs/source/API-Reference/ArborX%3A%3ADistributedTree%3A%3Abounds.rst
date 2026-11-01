@@ -7,7 +7,7 @@
 ==========================================================================================
 .. code-block:: C++
 
-    KOKKOS_FUNCTION bounding_volume_type bounds() const noexcept;
+    bounding_volume_type bounds() const noexcept;
 
 Returns a bounding volume of type ``BoundingVolume`` able to contain all leaves stored in the tree globally.
 

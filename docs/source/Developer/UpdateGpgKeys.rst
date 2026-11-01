@@ -13,7 +13,7 @@ issuing
 
 .. code-block:: shell
 
-    git --recv-keys [<keyserver>] <key>
+    gpg --keyserver <keyserver> --recv-keys <key>
 
 Unfortunately, our CI servers experience intermittent failures accessing
 external keyservers (assumingly, because of firewall related issues). As a

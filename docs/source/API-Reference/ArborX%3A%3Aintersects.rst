@@ -6,7 +6,7 @@
 .. code-block:: C++
 
     template <typename Geometry>
-    KOKKOS_FUNCTION unspecified intersects(Geometry const& geometry) noexcept;
+    KOKKOS_INLINE_FUNCTION unspecified intersects(Geometry const& geometry);
 
 Generate a spatial predicate to perform a search with in a spatial index' ``query()``.
 
@@ -25,7 +25,7 @@ Example
 -------
 .. code-block:: C++
 
-    auto intersects_with_unit_sphere_pred = ArborX::intersects(ArborX::Sphere{{{0.f, 0.f, 0.f}}, 1.f});
+    auto intersects_with_unit_sphere_pred = ArborX::intersects(ArborX::Sphere{{0.f, 0.f, 0.f}, 1.f});
 
 
 Helper functions
@@ -42,13 +42,15 @@ user geometries (which could be provided through
 
 This is equivalent to creating a set of predicates ``intersects(AccessTraits<Geometries>::get(i))``.
 
-A second helper function creates a set of withing radius ``intersects`` queries from a set of points:
+A second helper function creates a set of ``intersects`` queries for spheres of
+the given radius centered at the input points:
 
 .. code-block:: C++
 
     using Points = Kokkos::View<ArborX::Point<3>*>;
     Points points("points", 5);
     float radius = 1.f;
-    auto predicates_with_raidus = ArborX::Experimental::make_intersects(points, radius);
+    auto predicates_with_radius = ArborX::Experimental::make_intersects(points, radius);
 
-This is equivalent to creating a set of predicates ``intersects(ArborX::Sphere(AccessTraits<Points>::get(i), radius)``.
+This is equivalent to creating a set of predicates
+``intersects(ArborX::Sphere(AccessTraits<Points>::get(points, i), radius))``.

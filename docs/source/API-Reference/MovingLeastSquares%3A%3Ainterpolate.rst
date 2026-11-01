@@ -50,14 +50,14 @@ Example
 
       Kokkos::View<Point *, MemorySpace> src_points("Example::src_points",
                                                     num_sources);
-      Kokkos::View<Point *, MemorySpace> tgrt_points("Example::tgrt_points",
+      Kokkos::View<Point *, MemorySpace> target_points("Example::target_points",
                                                     num_targets);
       // fill src_points and tgrt_points
       // ...
 
       // Build the moving least squares coefficients
       ArborX::Interpolation::MovingLeastSquares<MemorySpace> mls(space, src_points,
-                                                                 tgrt_points);
+                                                                 target_points);
 
       Kokkos::View<double *, MemorySpace> src_values("Example::src_values",
                                                      num_sources);
