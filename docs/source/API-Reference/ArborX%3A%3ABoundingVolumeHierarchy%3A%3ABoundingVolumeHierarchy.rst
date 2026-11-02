@@ -30,8 +30,8 @@ Parameters
 Type requirements
 ^^^^^^^^^^^^^^^^^
 * ``MemorySpace`` must be accessible from ``ExecutionSpace`` (i.e., ``Kokkos::SpaceAccessibility<ExecutionSpace, MemorySpace>::accessible`` must be ``true``).
-* A specialization of :doc:`ArborX::AccessTraits <ArborX%3A%3AAccessTraits>` must match ``Values`` as the template argument.
-* The return type of ``ArborX::AccessTraits<Values>::get()`` must decay to ``Value``.
+* A specialization of :cpp:struct:`AccessTraits` must match ``Values`` as the template argument.
+* The return type of :cpp:func:`AccessTraits::get` must decay to ``Value``.
 * ``IndexableGetter`` must provide an ``operator()`` taking in a type that decays to ``Value`` and returning an indexable (geometric object).
 
 
