@@ -47,7 +47,7 @@ ArborX only provides specializations for Kokkos views
       :return: The number of values (primitives or predicates).
          The return type must be an integral type.
 
-   .. cpp:function:: KOKKOS_FUNCTION static decltype(auto) get(T const& data, int i)
+   .. cpp:function:: KOKKOS_FUNCTION static decltype(auto) get(T const& data, decltype(size(data)) i)
 
       :param data: Data argument passed to the spatial index constructor or ``query()``.
       :param i: Position of the value to return.
