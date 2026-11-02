@@ -21,7 +21,7 @@
 namespace ArborX
 {
 
-template <typename T, typename Enable = void>
+template <typename T>
 struct AccessTraits
 {
   using not_specialized = void; // tag to detect existence of a specialization

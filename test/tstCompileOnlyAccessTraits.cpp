@@ -25,30 +25,30 @@ struct NoAccessTraitsSpecialization
 
 struct EmptySpecialization
 {};
-template <typename Tag>
-struct ArborX::AccessTraits<EmptySpecialization, Tag>
+template <>
+struct ArborX::AccessTraits<EmptySpecialization>
 {};
 
 struct InvalidMemorySpace
 {};
-template <typename Tag>
-struct ArborX::AccessTraits<InvalidMemorySpace, Tag>
+template <>
+struct ArborX::AccessTraits<InvalidMemorySpace>
 {
   using memory_space = void;
 };
 
 struct MissingSizeMemberFunction
 {};
-template <typename Tag>
-struct ArborX::AccessTraits<MissingSizeMemberFunction, Tag>
+template <>
+struct ArborX::AccessTraits<MissingSizeMemberFunction>
 {
   using memory_space = Kokkos::HostSpace;
 };
 
 struct SizeMemberFunctionNotStatic
 {};
-template <typename Tag>
-struct ArborX::AccessTraits<SizeMemberFunctionNotStatic, Tag>
+template <>
+struct ArborX::AccessTraits<SizeMemberFunctionNotStatic>
 {
   using memory_space = Kokkos::HostSpace;
   int size(SizeMemberFunctionNotStatic) { return 255; }
@@ -56,8 +56,8 @@ struct ArborX::AccessTraits<SizeMemberFunctionNotStatic, Tag>
 
 struct MissingGetMemberFunction
 {};
-template <typename Tag>
-struct ArborX::AccessTraits<MissingGetMemberFunction, Tag>
+template <>
+struct ArborX::AccessTraits<MissingGetMemberFunction>
 {
   using memory_space = Kokkos::HostSpace;
   static int size(MissingGetMemberFunction) { return 255; }
@@ -65,8 +65,8 @@ struct ArborX::AccessTraits<MissingGetMemberFunction, Tag>
 
 struct GetMemberFunctionNotStatic
 {};
-template <typename Tag>
-struct ArborX::AccessTraits<GetMemberFunctionNotStatic, Tag>
+template <>
+struct ArborX::AccessTraits<GetMemberFunctionNotStatic>
 {
   using memory_space = Kokkos::HostSpace;
   static int size(GetMemberFunctionNotStatic) { return 255; }
@@ -75,8 +75,8 @@ struct ArborX::AccessTraits<GetMemberFunctionNotStatic, Tag>
 
 struct GetMemberFunctionVoid
 {};
-template <typename Tag>
-struct ArborX::AccessTraits<GetMemberFunctionVoid, Tag>
+template <>
+struct ArborX::AccessTraits<GetMemberFunctionVoid>
 {
   using memory_space = Kokkos::HostSpace;
   static int size(GetMemberFunctionVoid) { return 255; }
@@ -85,8 +85,8 @@ struct ArborX::AccessTraits<GetMemberFunctionVoid, Tag>
 
 struct MissingPredicateTag
 {};
-template <typename Tag>
-struct ArborX::AccessTraits<MissingPredicateTag, Tag>
+template <>
+struct ArborX::AccessTraits<MissingPredicateTag>
 {
   using memory_space = Kokkos::HostSpace;
   static int size(MissingPredicateTag) { return 255; }
@@ -99,8 +99,8 @@ struct CustomTag
 {
   using Tag = int;
 };
-template <typename Tag>
-struct ArborX::AccessTraits<InvalidPredicateTag, Tag>
+template <>
+struct ArborX::AccessTraits<InvalidPredicateTag>
 {
   using memory_space = Kokkos::HostSpace;
   static int size(InvalidPredicateTag) { return 255; }
