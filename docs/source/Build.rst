@@ -9,7 +9,7 @@ Dependencies
 +===============================================+=========+==========+=========+
 | `Kokkos  <https://github.com/kokkos/kokkos>`_ | 4.5.00  | ✔️       | ✔️      |
 +-----------------------------------------------+---------+----------+---------+
-| MPI                                           | 2       | ✔️       |         |
+| Message Passing Interface (MPI)               | 2       |          | ✔️      |
 +-----------------------------------------------+---------+----------+---------+
 | CMake                                         | 3.22    | ✔️       |         |
 +-----------------------------------------------+---------+----------+---------+
@@ -21,8 +21,6 @@ Build and installation
 ----------------------
 The build instructions for the Kokkos library can be found
 `here  <https://github.com/kokkos/kokkos#building-and-installing-kokkos>`_.
-ArborX requires Kokkos CMake build to have ``Kokkos_ENABLE_CUDA_LAMBDA=ON`` if
-``Kokkos_ENABLE_CUDA=ON``.
 
 
 Example: `OLCF Frontier  <https://docs.olcf.ornl.gov/systems/frontier_user_guide.html>`_
