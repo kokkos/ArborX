@@ -72,7 +72,7 @@ The return type must be
 
 * ``void``, or
 * :cpp:enum:`CallbackTreeTraversalControl` (spatial predicates only),
-  to optionally stop the search for the current predicate early.
+  to hint that the search for the current predicate may stop early.
   See `Early exit`_.
 
 The return type of a callback used with a nearest predicate must be ``void``.
@@ -157,15 +157,27 @@ Early exit
 
    .. cpp:enumerator:: early_exit
 
-      Stop the search for the current predicate.
-      The callback is not invoked again for that predicate.
+      Hint that the search for the current predicate may stop.
       The search for other predicates is not affected.
 
 Early exit is useful when only some of the results are needed, for example to
 find any (rather than all) value intersecting a region.
-Values already visited by other threads for the same predicate may have
-already invoked the callback, so a callback that returns ``early_exit`` can
-still be invoked more than once for that predicate.
+
+.. warning::
+
+   ``early_exit`` is a hint, not a guarantee.
+   The callback may still be invoked for the same predicate after it has
+   returned ``early_exit``, possibly with other values and possibly
+   concurrently from several threads.
+
+   Whether the hint is honored depends on the spatial index.
+   ``ArborX::BoundingVolumeHierarchy`` currently stops the traversal of a
+   predicate as soon as its callback returns ``early_exit``.
+   ``ArborX::BruteForce`` ignores it, as checking it would require
+   synchronization between the threads working on the same predicate.
+
+   A callback must therefore be correct if it keeps being invoked, and must not
+   assume that it sees a single value per predicate.
 
 
 Compile-time checks
@@ -229,21 +241,32 @@ Count the results of a spatial query without storing them (visiting callback):
         space, predicates,
         KOKKOS_LAMBDA(auto /*predicate*/, auto /*value*/) { ++counter(); });
 
-Stop after the first result found for each predicate (early exit):
+Record one value found for each predicate (early exit):
 
 .. code-block:: C++
 
     struct FindAny
     {
+      // initialized to std::numeric_limits<int>::max()
       Kokkos::View<int*, MemorySpace> found;
 
       template <typename Predicate, typename Value>
-      KOKKOS_FUNCTION auto operator()(Predicate const&, Value const& value) const
+      KOKKOS_FUNCTION auto operator()(Predicate const& predicate,
+                                      Value const& value) const
       {
-        found(0) = value.index;
+        // the predicates were generated with ArborX::attach(predicate, i)
+        int const i = ArborX::getData(predicate);
+        Kokkos::atomic_min(&found(i), value.index);
         return ArborX::CallbackTreeTraversalControl::early_exit;
       }
     };
+
+Each predicate carries its own position ``i`` (see ``ArborX::attach()``) so that
+it writes to its own entry of ``found``.
+The update is atomic because the callback may be invoked concurrently for the
+same predicate and may be invoked again after returning ``early_exit``.
+Which of the values intersecting the predicate ends up in ``found(i)`` is
+unspecified.
 
 A complete program is available in ``examples/callback/example_callback.cpp``:
 
