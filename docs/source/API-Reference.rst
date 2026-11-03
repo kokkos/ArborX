@@ -8,7 +8,7 @@ reference is available below for historical use.
 * :doc:`Predicates <API-Reference/Predicates>`
 * :doc:`Access traits <API-Reference/AccessTraits>`
 * :doc:`API-Reference/Callbacks`
-* :doc:`DBSCAN <API-Reference/DBSCAN>`
+* :doc:`API-Reference/Clustering`
 * :doc:`Moving least squares <API-Reference/MovingLeastSquares>`
 
 .. toctree::
