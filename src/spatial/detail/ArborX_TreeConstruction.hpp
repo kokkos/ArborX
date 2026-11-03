@@ -223,6 +223,15 @@ public:
       // Determine whether this node is left or right child of its parent
       bool const is_left_child = (delta_right < delta_left);
 
+      // Release writes to the current leaf or internal node before publishing
+      // its range through the relaxed CAS. This pairs with the load_fence()
+      // before the other thread reads this node.
+      // If Kokkos exposed the ordered CAS currently in
+      // Kokkos::Impl::atomic_compare_exchange_strong, acquire-release ordering
+      // on success and acquire ordering on failure could replace this fence
+      // and the load_fence() calls below.
+      Kokkos::store_fence();
+
       int left_child;
       if (is_left_child)
       {
