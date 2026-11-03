@@ -3,11 +3,11 @@ API Reference
 The API is organized by the operation or type family below. The version 1
 reference is available below for historical use.
 
-* :doc:`Spatial indexes <API-Reference/SpatialIndexes>`
-* :doc:`Geometries <API-Reference/Geometries>`
+* :doc:`API-Reference/SpatialIndexes`
+* :doc:`API-Reference/Geometries`
 * :doc:`Predicates <API-Reference/Predicates>`
 * :doc:`Access traits <API-Reference/AccessTraits>`
-* :doc:`Callbacks <API-Reference/Callbacks>`
+* :doc:`API-Reference/Callbacks`
 * :doc:`DBSCAN <API-Reference/DBSCAN>`
 * :doc:`Moving least squares <API-Reference/MovingLeastSquares>`
 
