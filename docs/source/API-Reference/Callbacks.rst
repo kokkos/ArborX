@@ -43,14 +43,18 @@ In both forms,
   :cpp:func:`AccessTraits\<Predicates\>::get() <AccessTraits::get>` after decay
   (e.g., what :cpp:func:`intersects` or
   :cpp:func:`nearest` returns).
-* ``Value`` is the ``Value`` template argument of the spatial index, e.g.,
-  ``ArborX::PairValueIndex<Point, int>`` for an index built with
-  ``ArborX::Experimental::attach_indices()``, in which case the position of the
-  primitive in the input is available as ``value.index``.
+* ``Value`` is the ``Value`` template argument of the spatial index.
 * The call operator is invoked through a ``const`` reference, so it must be
   ``const``.
 * The call operator is invoked from the device, so it must be marked with
   ``KOKKOS_FUNCTION``.
+
+.. note::
+
+   For an index built with ``ArborX::Experimental::attach_indices()``, the
+   stored value is an ``ArborX::PairValueIndex``: the geometry is available as
+   ``value.value`` and its position in the input as ``value.index``.
+   The examples below use it.
 
 
 Visiting callback
