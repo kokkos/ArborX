@@ -1,11 +1,11 @@
 Interpolation
 =============
 
-* :doc:`Moving least squares <MovingLeastSquares>`
+* :doc:`Moving least squares <interpolation/MovingLeastSquares>`
 
 .. toctree::
    :hidden:
    :maxdepth: 1
    :titlesonly:
 
-   MovingLeastSquares
+   interpolation/MovingLeastSquares
