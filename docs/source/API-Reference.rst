@@ -9,7 +9,7 @@ reference is available below for historical use.
 * :doc:`Access traits <API-Reference/AccessTraits>`
 * :doc:`API-Reference/Callbacks`
 * :doc:`API-Reference/Clustering`
-* :doc:`Moving least squares <API-Reference/MovingLeastSquares>`
+* :doc:`API-Reference/Interpolation`
 
 .. toctree::
    :hidden:
@@ -22,4 +22,4 @@ reference is available below for historical use.
    API-Reference/AccessTraits
    API-Reference/Callbacks
    API-Reference/Clustering
-   API-Reference/MovingLeastSquares
+   API-Reference/Interpolation
