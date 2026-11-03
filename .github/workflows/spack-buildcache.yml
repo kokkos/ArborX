@@ -24,7 +24,7 @@ jobs:
       packages: write
     steps:
     - name: Checkout
-      uses: actions/checkout@v7.0.0
+      uses: actions/checkout@v7.0.1
 
     - name: Setup Spack
       uses: spack/setup-spack@v3.0.0

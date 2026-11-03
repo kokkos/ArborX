@@ -36,7 +36,7 @@ jobs:
         languages: c-cpp
 
     - name: Checkout Kokkos
-      uses: actions/checkout@v7.0.0
+      uses: actions/checkout@v7.0.1
       with:
         repository: kokkos/kokkos
         path: kokkos
@@ -62,7 +62,7 @@ jobs:
       run: make -j2 install
 
     - name: Checkout repository
-      uses: actions/checkout@v7.0.0
+      uses: actions/checkout@v7.0.1
       with:
         path: arborx
 
