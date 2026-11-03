@@ -77,7 +77,7 @@ Parameters
 Type requirements
 ^^^^^^^^^^^^^^^^^
 * ``MemorySpace`` must be accessible from ``ExecutionSpace``. (``Kokkos::SpaceAccessibility<ExecutionSpace, MemorySpace>::accessible`` must be ``true``.)
-* A specialization of :doc:`ArborX::AccessTraits <ArborX%3A%3AAccessTraits>` must match the ``Predicates`` as the template argument.
+* A specialization of :cpp:struct:`ArborX::AccessTraits` must match the ``Predicates`` as the template argument.
 * The member type ``ArborX::AccessTraits<Predicates>::memory_space`` must be accessible from ``ExecutionSpace``.
 * The static member function ``ArborX::AccessTraits<Predicates>::get()`` return type must decay to a valid ArborX predicate.
 

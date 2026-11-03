@@ -153,6 +153,9 @@ Output
     0 4
 
 
+
+.. _arborxtraitsaccessttagsize:
+
 ``ArborX::AccessTraits<T,Tag>::size``
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 .. code-block:: C++
@@ -169,6 +172,9 @@ Returns
 """""""""
 The number of primitives if the second template argument is ``ArborX::PrimitivesTag`` or the number of queries to perform if it is ``ArborX::PredicatesTag``.
 
+
+
+.. _arborxtraitsaccessttagget:
 
 ``ArborX::AccessTraits<T,Tag>::get``
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^

@@ -32,7 +32,7 @@ Helper functions
 ----------------
 ArborX provides a helper function to create ``intersects`` queries from a set of
 user geometries (which could be provided through
-:doc:`Access traits <ArborX%3A%3AAccessTraits>`):
+:doc:`Access traits <AccessTraits>`):
 
 .. code-block:: C++
 
