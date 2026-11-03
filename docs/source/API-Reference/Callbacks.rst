@@ -40,7 +40,7 @@ passed to.
 In both forms,
 
 * ``Predicate`` is the type of the predicates returned by
-  :cpp:struct:`AccessTraits` ``<Predicates>::get()`` after decay
+  :cpp:func:`AccessTraits\<Predicates\>::get() <AccessTraits::get>` after decay
   (e.g., what :cpp:func:`intersects` or
   :cpp:func:`nearest` returns).
 * ``Value`` is the ``Value`` template argument of the spatial index, e.g.,
