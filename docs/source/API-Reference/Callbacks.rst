@@ -1,7 +1,5 @@
 Callbacks
 =========
-Defined in header `<ArborX_Callbacks.hpp> <https://github.com/arborx/ArborX/blob/master/src/spatial/detail/ArborX_Callbacks.hpp>`_
-
 A callback is a user-provided function object that a spatial index ``query()``
 invokes, from the device, every time a value stored in the index satisfies a
 predicate.
