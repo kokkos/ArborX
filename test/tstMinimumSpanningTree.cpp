@@ -81,6 +81,30 @@ std::vector<T> sorted(std::vector<T> v)
 
 } // namespace Test
 
+BOOST_AUTO_TEST_CASE_TEMPLATE(minimum_spanning_tree_rounding, DeviceType,
+                              ARBORX_DEVICE_TYPES)
+{
+  using ExecutionSpace = typename DeviceType::execution_space;
+  ExecutionSpace exec_space;
+
+  using Point = ArborX::Point<3>;
+  using WeightedEdge = ArborX::Experimental::WeightedEdge;
+
+  // Reduced from the golden test. Contracting multiply-adds in the initial
+  // radius but not in traversal made the radius one ULP too small, so neither
+  // point found its outgoing edge.
+  std::vector<Point> points{
+      {0.721298527f, 0.006611482f, 0.727102995f},
+      {0.788488075f, 0.180473318f, 0.708019695f},
+  };
+  for (int k : {1, 2})
+  {
+    ARBORX_TEST_MINIMUM_SPANNING_TREE(
+        exec_space, points, k,
+        (std::vector<WeightedEdge>{{0, 1, 0x1.7fba7cp-3f}}));
+  }
+}
+
 BOOST_AUTO_TEST_CASE_TEMPLATE(minimum_spanning_tree, DeviceType,
                               ARBORX_DEVICE_TYPES)
 {
