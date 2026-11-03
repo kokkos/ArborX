@@ -88,4 +88,4 @@ See also
 * :doc:`Predicates </API-Reference/Predicates>`
 * :cpp:func:`nearest`
 * :doc:`Callbacks </API-Reference/Callbacks>`
-* :doc:`ArborX::BVH::query() </API-Reference/ArborX%3A%3ABoundingVolumeHierarchy%3A%3Aquery>`
+* :cpp:func:`BoundingVolumeHierarchy::query`

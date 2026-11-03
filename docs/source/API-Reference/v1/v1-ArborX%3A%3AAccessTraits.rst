@@ -12,7 +12,7 @@ Defined in header `<ArborX_AccessTraits.hpp> <https://github.com/arborx/ArborX/t
     template <typename T, typename Tag, typename Enable=void>
     struct AccessTraits;
 
-The struct template ``ArborX::AccessTraits`` tells the :doc:`ArborX::BVH constructor </API-Reference/ArborX%3A%3ABoundingVolumeHierarchy%3A%3ABoundingVolumeHierarchy>` how much data to index and how to access that data, or :doc:`ArborX::BVH::query() </API-Reference/ArborX%3A%3ABoundingVolumeHierarchy%3A%3Aquery>` what predicates to query for.
+The struct template ``ArborX::AccessTraits`` tells the :doc:`ArborX::BVH constructor <v1-ArborX%3A%3ABoundingVolumeHierarchy%3A%3ABoundingVolumeHierarchy>` how much data to index and how to access that data, or :doc:`ArborX::BVH::query() <v1-ArborX%3A%3ABoundingVolumeHierarchy%3A%3Aquery>` what predicates to query for.
 
 ArborX provides the following partial specialization for Kokkos views
 

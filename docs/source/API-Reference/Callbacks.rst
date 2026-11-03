@@ -279,7 +279,7 @@ A complete program is available in ``examples/callback/example_callback.cpp``:
 
 See also
 --------
-* :doc:`ArborX::BVH::query() <ArborX%3A%3ABoundingVolumeHierarchy%3A%3Aquery>`
+* :cpp:func:`BoundingVolumeHierarchy::query`
 * :doc:`ArborX::BruteForce::query() <ArborX%3A%3ABruteForce%3A%3Aquery>`
 * :doc:`Predicates <Predicates>`
 * :doc:`AccessTraits <AccessTraits>`
