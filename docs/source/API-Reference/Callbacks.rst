@@ -61,9 +61,9 @@ Visiting callback
 ^^^^^^^^^^^^^^^^^
 .. code-block:: C++
 
-    KOKKOS_FUNCTION void operator()(Predicate const& predicate, Value const& value) const;
+    KOKKOS_FUNCTION void operator()(Predicate const &predicate, Value const &value) const;
     KOKKOS_FUNCTION ArborX::CallbackTreeTraversalControl
-    operator()(Predicate const& predicate, Value const& value) const;
+    operator()(Predicate const &predicate, Value const &value) const;
 
 Invoked once per (predicate, value) pair that satisfies the predicate (for
 nearest predicates, once per each of the ``k`` nearest values).
@@ -85,8 +85,8 @@ Output callback
 .. code-block:: C++
 
     template <typename OutputFunctor>
-    KOKKOS_FUNCTION void operator()(Predicate const& predicate, Value const& value,
-                                    OutputFunctor const& out) const;
+    KOKKOS_FUNCTION void operator()(Predicate const &predicate, Value const &value,
+                                    OutputFunctor const &out) const;
 
 Invoked for every (predicate, value) pair that satisfies the predicate.
 Results are stored by calling ``out(x)``, where ``x`` is convertible to the
@@ -137,8 +137,8 @@ callback
     struct DefaultCallback
     {
       template <typename Predicate, typename Value, typename OutputFunctor>
-      KOKKOS_FUNCTION void operator()(Predicate const&, Value const& value,
-                                      OutputFunctor const& out) const
+      KOKKOS_FUNCTION void operator()(Predicate const &, Value const &value,
+                                      OutputFunctor const &out) const
       {
         out(value);
       }
@@ -205,8 +205,8 @@ Store the index of every value found (output callback):
     struct StoreIndex
     {
       template <typename Predicate, typename Value, typename OutputFunctor>
-      KOKKOS_FUNCTION void operator()(Predicate const&, Value const& value,
-                                      OutputFunctor const& out) const
+      KOKKOS_FUNCTION void operator()(Predicate const &, Value const &value,
+                                      OutputFunctor const &out) const
       {
         out(value.index);
       }
@@ -224,9 +224,9 @@ Keep only the values on one side of a plane (output callback with a filter):
     {
       template <typename Predicate, typename OutputFunctor>
       KOKKOS_FUNCTION void
-      operator()(Predicate const&,
-                 ArborX::PairValueIndex<ArborX::Point<3>, int> const& value,
-                 OutputFunctor const& out) const
+      operator()(Predicate const &,
+                 ArborX::PairValueIndex<ArborX::Point<3>, int> const &value,
+                 OutputFunctor const &out) const
       {
         if (value.value[0] > 0)
           out(value.index);
@@ -253,8 +253,8 @@ Record one value found for each predicate (early exit):
       Kokkos::View<int*, MemorySpace> found;
 
       template <typename Predicate, typename Value>
-      KOKKOS_FUNCTION auto operator()(Predicate const& predicate,
-                                      Value const& value) const
+      KOKKOS_FUNCTION auto operator()(Predicate const &predicate,
+                                      Value const &value) const
       {
         // the predicates were generated with ArborX::attach(predicate, i)
         int const i = ArborX::getData(predicate);
