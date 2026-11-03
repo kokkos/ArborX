@@ -1,11 +1,11 @@
 Clustering
 ==========
 
-* :doc:`DBSCAN <DBSCAN>`
+* :doc:`DBSCAN <clustering/DBSCAN>`
 
 .. toctree::
    :hidden:
    :maxdepth: 1
    :titlesonly:
 
-   DBSCAN
+   clustering/DBSCAN
