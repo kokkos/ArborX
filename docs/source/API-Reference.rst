@@ -5,7 +5,7 @@ reference is available below for historical use.
 
 * :doc:`API-Reference/SpatialIndexes`
 * :doc:`API-Reference/Geometries`
-* :doc:`Predicates <API-Reference/Predicates>`
+* :doc:`API-Reference/Predicates`
 * :doc:`Access traits <API-Reference/AccessTraits>`
 * :doc:`API-Reference/Callbacks`
 * :doc:`API-Reference/Clustering`
