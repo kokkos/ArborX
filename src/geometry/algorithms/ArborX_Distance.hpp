@@ -24,6 +24,8 @@
 #include <Kokkos_MathematicalFunctions.hpp>
 #include <Kokkos_MinMax.hpp>
 
+#include <type_traits>
+
 namespace ArborX
 {
 namespace Details::Dispatch
@@ -63,7 +65,19 @@ struct distance<PointTag, PointTag, Point1, Point2>
     for (int d = 0; d < DIM; ++d)
     {
       auto tmp = b[d] - a[d];
-      distance_squared += tmp * tmp;
+      if constexpr (std::is_floating_point_v<Coordinate>)
+      {
+        // Inlining and optimization can otherwise contract multiply-adds
+        // differently at different call sites, changing the rounding.
+        // Consistent rounding is critical for some algorithms, e.g., MST.
+        distance_squared = Kokkos::fma(tmp, tmp, distance_squared);
+      }
+      else
+      {
+        // Kokkos::fma does not support all coordinate types, e.g., half types,
+        // so preserve the original arithmetic for those types.
+        distance_squared += tmp * tmp;
+      }
     }
     return Kokkos::sqrt(distance_squared);
   }
