@@ -35,10 +35,20 @@ using KDOP = ArborX::Experimental::KDOP<3, 6>;
 using Triangle = ArborX::Triangle<3>;
 using Tetrahedron = ArborX::ExperimentalHyperGeometry::Tetrahedron<>;
 
+namespace
+{
+template <typename... Points>
+KDOP makeKDOP(Points const &...points)
+{
+  KDOP kdop;
+  (ArborX::Details::expand(kdop, points), ...);
+  return kdop;
+}
+} // namespace
+
 BOOST_AUTO_TEST_CASE(equals)
 {
   using ArborX::Details::equals;
-  using ArborX::Details::expand;
 
   // points
   static_assert(equals(Point{}, Point{}));
@@ -59,13 +69,9 @@ BOOST_AUTO_TEST_CASE(equals)
   static_assert(!equals(Sphere{{{0, 0, 0}}, 1}, {{{0, 0, 0}}, 2}));
 
   // kdop
-  KDOP a, b, c;
-  expand(a, Point{0, 0, 0});
-  expand(b, Point{0, 0, 0});
-  expand(c, Point{0, 0, 1});
   static_assert(equals(KDOP{}, KDOP{}));
-  BOOST_TEST(equals(a, b));
-  BOOST_TEST(!equals(a, c));
+  BOOST_TEST(equals(makeKDOP(Point{0, 0, 0}), makeKDOP(Point{0, 0, 0})));
+  BOOST_TEST(!equals(makeKDOP(Point{0, 0, 0}), makeKDOP(Point{0, 0, 1})));
 }
 
 BOOST_AUTO_TEST_CASE(convert)
