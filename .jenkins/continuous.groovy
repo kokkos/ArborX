@@ -40,7 +40,7 @@ pipeline {
             when {
                 beforeAgent true
                 anyOf {
-                    changeset pattern: '^(?!docs/).+$', comparator: 'REGEXP', caseSensitive: true
+                    changeset pattern: '^(?!docs/|\\.github/).+$', comparator: 'REGEXP', caseSensitive: true
                     // allow running with an empty changelog
                     not {
                         changeset pattern: '.*', comparator: 'REGEXP', caseSensitive: true
@@ -64,7 +64,7 @@ pipeline {
         stage('Build') {
             when {
                 anyOf {
-                    changeset pattern: '^(?!docs/).+$', comparator: 'REGEXP', caseSensitive: true
+                    changeset pattern: '^(?!docs/|\\.github/).+$', comparator: 'REGEXP', caseSensitive: true
                     // allow running with an empty changelog
                     not {
                         changeset pattern: '.*', comparator: 'REGEXP', caseSensitive: true
