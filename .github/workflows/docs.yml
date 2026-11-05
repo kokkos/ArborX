@@ -3,8 +3,12 @@ name: Documentation
 on:
   pull_request:
     types: [opened, reopened, synchronize]
+    paths:
+      - "docs/**"
   push:
     branches: [master]
+    paths:
+      - "docs/**"
   workflow_dispatch:
 
 permissions:
