@@ -90,9 +90,27 @@ Defined in header `<ArborX_LinearBVH.hpp> <https://github.com/arborx/ArborX/blob
                      void query(ExecutionSpace const &space, \
                                 Predicates const &predicates, \
                                 Callback const &callback) const
+                     template <typename ExecutionSpace, typename Predicates, \
+                               typename Values, typename Offsets> \
+                     void query(ExecutionSpace const &space, \
+                                Predicates const &predicates, \
+                                Values &values, Offsets &offsets) const
+                     template <typename ExecutionSpace, typename Predicates, \
+                               typename Callback, typename Values, typename Offsets> \
+                     void query(ExecutionSpace const &space, \
+                                Predicates const &predicates, \
+                                Callback const &callback, \
+                                Values &values, Offsets &offsets) const
 
-      Find the values that satisfy the predicates and invoke the callback on
-      each of them.
+      Find the values that satisfy the predicates.
+
+      * The first overload invokes ``callback`` on each of them.
+      * The second overload stores them in ``{values, offsets}``.
+      * The third overload invokes ``callback`` on each of them and stores
+        what the callback outputs in ``{values, offsets}``.
+        The callback is an *output callback*, see
+        :doc:`/API-Reference/Callbacks` for how results are stored and for the
+        number of times it may be invoked.
 
       For spatial predicates, the call finds all the values whose indexable
       meets the predicate.
@@ -106,8 +124,7 @@ Defined in header `<ArborX_LinearBVH.hpp> <https://github.com/arborx/ArborX/blob
                callback(predicate, value);
 
       For nearest predicates, the call finds the specified number of the
-      values whose indexables are the nearest to the predicate geometry, and
-      invokes the callback on those.
+      values whose indexables are the nearest to the predicate geometry.
       Conceptually, it is equivalent to
 
       .. code-block:: C++
@@ -116,24 +133,9 @@ Defined in header `<ArborX_LinearBVH.hpp> <https://github.com/arborx/ArborX/blob
            for (auto value : k_nearest_values_of_predicate)
              callback(predicate, value);
 
-      :param space: The execution space in which to run the query.
-      :param predicates: The predicates to check against the values.
-      :param callback: A function object invoked when a value satisfies a
-         predicate.
-
-   .. cpp:function:: template <typename ExecutionSpace, typename Predicates, \
-                               typename Values, typename Offsets> \
-                     void query(ExecutionSpace const &space, \
-                                Predicates const &predicates, \
-                                Values &values, Offsets &offsets) const
-
-      Find the values that satisfy the predicates and store them in
-      ``{values, offsets}``.
-
-      ``values`` stores the values stored in the tree that satisfy the
-      predicates, grouped by predicate.
-      ``offsets`` stores the position in ``values`` where the entries of each
-      predicate start, i.e., ``predicates(i)`` is satisfied by the values
+      When results are stored, ``values`` holds them grouped by predicate and
+      ``offsets`` holds the position in ``values`` where the entries of each
+      predicate start, i.e., the results of ``predicates(i)`` are
       ``values(j)`` for ``offsets(i) <= j < offsets(i+1)``.
       Following the usual convention, ``offsets(n) == values.size()``, where
       ``n`` is the number of predicates and ``values.size()`` is the total
@@ -142,30 +144,10 @@ Defined in header `<ArborX_LinearBVH.hpp> <https://github.com/arborx/ArborX/blob
 
       :param space: The execution space in which to run the query.
       :param predicates: The predicates to check against the values.
-      :param values: The values that satisfy the predicates.
-      :param offsets: The position in ``values`` of the first value of each
-         predicate.
-
-   .. cpp:function:: template <typename ExecutionSpace, typename Predicates, \
-                               typename Callback, typename Values, typename Offsets> \
-                     void query(ExecutionSpace const &space, \
-                                Predicates const &predicates, \
-                                Callback const &callback, \
-                                Values &values, Offsets &offsets) const
-
-      Find the values that satisfy the predicates, invoke the callback on each
-      of them, and store in ``{values, offsets}`` what the callback outputs.
-      The layout of ``values`` and ``offsets`` is the one described above.
-
-      The callback is an *output callback*, see :doc:`/API-Reference/Callbacks`
-      for how results are stored and for the number of times it may be
-      invoked.
-
-      :param space: The execution space in which to run the query.
-      :param predicates: The predicates to check against the values.
       :param callback: A function object invoked when a value satisfies a
-         predicate, which stores its output.
-      :param values: The values output by the callback.
+         predicate.
+      :param values: The values that satisfy the predicates or, if a callback
+         is passed, the entries it outputs.
       :param offsets: The position in ``values`` of the first entry of each
          predicate.
 
