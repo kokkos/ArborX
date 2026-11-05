@@ -1,0 +1,136 @@
+name: CUDA on simulated H100
+
+# Optional, non-required check. The hosted runners have no GPU, so this builds
+# Kokkos and most of the ArborX tests with the CUDA backend and runs them on a
+# simulated NVIDIA H100 (https://github.com/pantheongpu/pantheonsim). A
+# simulator cannot reproduce hardware-specific behavior or timing, so it
+# complements real-GPU testing and does not replace it.
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [ master ]
+    paths:
+      - "src/**"
+      - "test/**"
+      - "cmake/**"
+      - "CMakeLists.txt"
+      - ".github/workflows/gpu-sim.yml"
+  pull_request:
+    paths:
+      - "src/**"
+      - "test/**"
+      - "cmake/**"
+      - "CMakeLists.txt"
+      - ".github/workflows/gpu-sim.yml"
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+env:
+  KOKKOS_VERSION: 5.2.2
+
+jobs:
+  build-and-test:
+    name: CUDA 13.0, simulated H100
+    runs-on: ubuntu-24.04
+    timeout-minutes: 120
+
+    steps:
+    - name: Checkout
+      uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+      with:
+        path: source
+
+    - name: Set up the simulated GPU and CUDA toolkit
+      uses: pantheongpu/setup-pantheonsim@dda0c8df8d72627c295edbae525354ba2bcb1687 # v0.1.4
+      with:
+        gpu: nvidia/h100
+        cuda-toolkit: "13.0"
+
+    - name: Install dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y --no-install-recommends ccache ninja-build libboost-test-dev
+
+    - name: Restore ccache
+      uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+      with:
+        path: ~/.cache/ccache
+        key: ccache-gpu-sim-${{ github.sha }}
+        restore-keys: |
+          ccache-gpu-sim-
+
+    # The simulator JIT-compiles PTX and does not run SASS, and it needs a
+    # shared CUDA runtime. Kokkos only passes -arch=sm_90, so nvcc is called
+    # through a small script that turns it into -arch=compute_90 (PTX only).
+    # The script calls the toolkit's nvcc directly, so the shared runtime is
+    # set with --cudart shared below.
+    - name: Make nvcc emit PTX only
+      run: |
+        mkdir -p "$RUNNER_TEMP/ptx-only"
+        {
+          echo '#!/bin/bash'
+          echo 'args=()'
+          echo 'for a in "$@"; do'
+          echo '  [ "$a" = "-arch=sm_90" ] && a="-arch=compute_90"'
+          echo '  args+=("$a")'
+          echo 'done'
+          echo 'exec /usr/local/cuda-13.0/bin/nvcc "${args[@]}"'
+        } > "$RUNNER_TEMP/ptx-only/nvcc"
+        chmod +x "$RUNNER_TEMP/ptx-only/nvcc"
+        echo "$RUNNER_TEMP/ptx-only" >> "$GITHUB_PATH"
+
+    - name: Build Kokkos
+      run: |
+        ccache -z
+        git clone --depth 1 --branch ${KOKKOS_VERSION} https://github.com/kokkos/kokkos.git
+        cmake -S kokkos -B kokkos-build -GNinja \
+              -DCMAKE_BUILD_TYPE=Release \
+              -DCMAKE_CXX_STANDARD=20 \
+              -DCMAKE_CXX_COMPILER=${{github.workspace}}/kokkos/bin/nvcc_wrapper \
+              -DCMAKE_CXX_COMPILER_LAUNCHER=ccache \
+              -DCMAKE_CXX_FLAGS="--cudart shared" \
+              -DCMAKE_INSTALL_PREFIX=${{github.workspace}}/kokkos-install \
+              -DKokkos_ENABLE_CUDA=ON \
+              -DKokkos_ENABLE_SERIAL=ON \
+              -DKokkos_ARCH_HOPPER90=ON
+        cmake --build kokkos-build -j3
+        cmake --install kokkos-build
+        ccache -s
+
+    - name: Configure ArborX
+      run: |
+        cmake -S source -B build -GNinja \
+              -DCMAKE_BUILD_TYPE=Release \
+              -DCMAKE_PREFIX_PATH=${{github.workspace}}/kokkos-install \
+              -DCMAKE_CXX_COMPILER=${{github.workspace}}/kokkos-install/bin/nvcc_wrapper \
+              -DCMAKE_CXX_COMPILER_LAUNCHER=ccache \
+              -DCMAKE_CXX_FLAGS="--cudart shared" \
+              -DARBORX_ENABLE_TESTS=ON
+
+    # All test executables except QueryTree, which instantiates every tree and
+    # query type and takes far too long to build on a hosted runner
+    - name: Build tests
+      run: |
+        cmake --build build -j3 --target \
+              ArborX_Test_DetailsUtils.exe \
+              ArborX_Test_KokkosExt.exe \
+              ArborX_Test_Geometry.exe \
+              ArborX_Test_DetailsTreeConstruction.exe \
+              ArborX_Test_DetailsContainers.exe \
+              ArborX_Test_DetailsCrsGraphWrapperImpl.exe \
+              ArborX_Test_Clustering.exe \
+              ArborX_Test_DetailsClusteringHelpers.exe \
+              ArborX_Test_SpecializedTraversals.exe \
+              ArborX_Test_BoostAdapters.exe \
+              ArborX_Test_InterpMovingLeastSquares.exe
+        ccache -s
+
+    - name: Test
+      run: |
+        vgpu run ctest --test-dir build --output-on-failure -E 'ArborX_Test_QueryTree'
