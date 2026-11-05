@@ -6,9 +6,9 @@ Current version of ArborX implements two local and one distributed spatial index
 
 :doc:`spatial_indexes/BoundingVolumeHierarchy`
 
-:doc:`ArborX::BruteForce <ArborX%3A%3ABruteForce>`
+:doc:`BruteForce <ArborX%3A%3ABruteForce>`
 
-:doc:`ArborX::DistributedTree <ArborX%3A%3ADistributedTree>`
+:doc:`DistributedTree <ArborX%3A%3ADistributedTree>`
 
 .. note::
 
