@@ -108,7 +108,6 @@ implementation, without printing anything.
    .. cpp:enumerator:: DBSCAN_STAR
 
       Border points are considered noise.
-      The result is the same as for ``DBSCAN`` when ``core_min_size`` is 2.
 
 
 Example
