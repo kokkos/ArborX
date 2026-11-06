@@ -15,7 +15,7 @@ Defined in header `<ArborX_MinimumSpanningTree.hpp> <https://github.com/arborx/A
    It can also be the *mutual reachability distance*, as used by
    HDBSCAN.
    The tree is computed with Boruvka's algorithm, using a
-   :cpp:class:`BoundingVolumeHierarchy` to find the nearest neighbors.
+   :cpp:class:`BoundingVolumeHierarchy` to find the nearest neighbors [1]_.
 
    :tparam MemorySpace: The Kokkos memory space in which the edges reside.
 
@@ -100,3 +100,13 @@ The example below computes the Euclidean minimum spanning tree of six points in
 See also
 --------
 * :doc:`/API-Reference/AccessTraits`
+
+
+References
+----------
+.. [1] Prokopenko, A., Sao, P., and Lebrun-Grandie, D.,"`A single-tree algorithm
+   to compute the Euclidean minimum spanning tree on GPUs
+   <https://doi.org/10.1145/3545008.3546185>`_".
+   In: Proceedings of the 51st International Conference on Parallel Processing
+   (ICPP '22), Association for Computing Machinery, New York, NY, USA,
+   Article 14, pp. 1-10. 2022
