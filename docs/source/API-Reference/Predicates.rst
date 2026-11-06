@@ -64,6 +64,6 @@ exists for ordered spatial predicates.
 
 See also
 --------
-* :doc:`ArborX::BVH::query() <ArborX%3A%3ABoundingVolumeHierarchy%3A%3Aquery>`
+* :cpp:func:`BoundingVolumeHierarchy::query`
 * :doc:`Callbacks <Callbacks>`
 * :doc:`AccessTraits <AccessTraits>`

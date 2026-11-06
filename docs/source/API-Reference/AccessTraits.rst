@@ -10,9 +10,9 @@ Defined in header `<ArborX_AccessTraits.hpp> <https://github.com/arborx/ArborX/b
 
 ``ArborX::AccessTraits`` is a customization point, not a class to instantiate.
 It tells the spatial index constructor (e.g.,
-:doc:`ArborX::BVH constructor <ArborX%3A%3ABoundingVolumeHierarchy%3A%3ABoundingVolumeHierarchy>`)
+:cpp:func:`BoundingVolumeHierarchy constructor <BoundingVolumeHierarchy::BoundingVolumeHierarchy>`)
 how much data to index and how to access that data, or a spatial index query
-(e.g., :doc:`ArborX::BVH::query() <ArborX%3A%3ABoundingVolumeHierarchy%3A%3Aquery>`)
+(e.g., :cpp:func:`BoundingVolumeHierarchy::query`)
 what predicates to query for.
 
 ArborX does not implement :cpp:struct:`AccessTraits` for arbitrary types.

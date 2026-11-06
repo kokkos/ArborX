@@ -4,11 +4,11 @@ ArborX provides data structures called spatial indexes which may be used to acce
 
 Current version of ArborX implements two local and one distributed spatial indexes.
 
-:doc:`ArborX::BoundingVolumeHierarchy <ArborX%3A%3ABoundingVolumeHierarchy>`
+:doc:`spatial_indexes/BoundingVolumeHierarchy`
 
-:doc:`ArborX::BruteForce <ArborX%3A%3ABruteForce>`
+:doc:`BruteForce <ArborX%3A%3ABruteForce>`
 
-:doc:`ArborX::DistributedTree <ArborX%3A%3ADistributedTree>`
+:doc:`DistributedTree <ArborX%3A%3ADistributedTree>`
 
 .. note::
 
@@ -23,7 +23,7 @@ Complexity
 +---------------------------------------------------------------------------------+--------------+--------------+
 | Data structure                                                                  | Construction | Query        |
 +=================================================================================+==============+==============+
-| :doc:`BoundingVolumeHierarchy <ArborX%3A%3ABoundingVolumeHierarchy>`            | *O(N log N)* | *O(M log N)* |
+| :doc:`spatial_indexes/BoundingVolumeHierarchy`                                  | *O(N log N)* | *O(M log N)* |
 +---------------------------------------------------------------------------------+--------------+--------------+
 | :doc:`BruteForce <ArborX%3A%3ABruteForce>`                                      | *O(N)*       | *O(M N)*     |
 +---------------------------------------------------------------------------------+--------------+--------------+
@@ -36,7 +36,7 @@ Current support
 +---------------------------------------------------------------------------------+-----------------+-----------------+
 | Data structure                                                                  | Spatial queries | Nearest queries |
 +=================================================================================+=================+=================+
-| :doc:`BoundingVolumeHierarchy <ArborX%3A%3ABoundingVolumeHierarchy>`            | ✔️              | ✔️              |
+| :doc:`spatial_indexes/BoundingVolumeHierarchy`                                  | ✔️              | ✔️              |
 +---------------------------------------------------------------------------------+-----------------+-----------------+
 | :doc:`BruteForce <ArborX%3A%3ABruteForce>`                                      | ✔️              | ✔️              |
 +---------------------------------------------------------------------------------+-----------------+-----------------+
@@ -48,6 +48,6 @@ Current support
    :maxdepth: 1
    :titlesonly:
 
-   ArborX%3A%3ABoundingVolumeHierarchy
+   spatial_indexes/BoundingVolumeHierarchy
    ArborX%3A%3ABruteForce
    ArborX%3A%3ADistributedTree
