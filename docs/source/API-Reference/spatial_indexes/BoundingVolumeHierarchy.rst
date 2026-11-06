@@ -18,10 +18,10 @@ Defined in header `<ArborX_LinearBVH.hpp> <https://github.com/arborx/ArborX/blob
    :tparam MemorySpace: A valid Kokkos memory space, in which the tree resides.
    :tparam Value: The type of the objects stored in the tree.
    :tparam IndexableGetter: A function object extracting an indexable geometry
-      from a ``Value``.
-      The default, ``Experimental::DefaultIndexableGetter``, uses the value
-      itself as the indexable, or the geometry it wraps if the value is an
-      ``ArborX::PairValueIndex``.
+      from a ``Value``, see :doc:`IndexableGetter`.
+      The default, :cpp:struct:`Experimental::DefaultIndexableGetter`, uses the
+      value itself as the indexable, or the geometry it wraps if the value is
+      an ``ArborX::PairValueIndex``.
    :tparam BoundingVolume: The bounding volume used for the internal nodes.
       By default, an :doc:`ArborX::Box </API-Reference/Geometries%3A%3ABox>`
       with the dimension and the coordinate type of the indexables.
@@ -228,4 +228,5 @@ See also
 * :doc:`Predicates </API-Reference/Predicates>`
 * :doc:`Callbacks </API-Reference/Callbacks>`
 * :doc:`AccessTraits </API-Reference/AccessTraits>`
+* :doc:`IndexableGetter <IndexableGetter>`
 * :doc:`BruteForce </API-Reference/ArborX%3A%3ABruteForce>`

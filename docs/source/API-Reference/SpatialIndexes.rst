@@ -51,3 +51,4 @@ Current support
    spatial_indexes/BoundingVolumeHierarchy
    ArborX%3A%3ABruteForce
    ArborX%3A%3ADistributedTree
+   spatial_indexes/IndexableGetter
