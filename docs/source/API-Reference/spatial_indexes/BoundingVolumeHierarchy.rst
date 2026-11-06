@@ -175,6 +175,28 @@ Defined in header `<ArborX_LinearBVH.hpp> <https://github.com/arborx/ArborX/blob
    The two names are interchangeable.
 
 
+Deduction guides
+----------------
+The ``MemorySpace`` and ``Value`` template arguments are deduced from the
+``Values`` passed to the constructor through :cpp:struct:`AccessTraits`:
+``MemorySpace`` is ``AccessTraits<Values>::memory_space`` and ``Value`` is the
+type returned by :cpp:func:`AccessTraits::get`, without cv-qualifiers and
+reference.
+
+.. cpp:function:: template <typename ExecutionSpace, typename Values> \
+                  BoundingVolumeHierarchy(ExecutionSpace, Values values) \
+                  -> BoundingVolumeHierarchy<typename AccessTraits<Values>::memory_space, \
+                                             std::remove_cvref_t<decltype(AccessTraits<Values>::get(values, 0))>>
+                  template <typename ExecutionSpace, typename Values, \
+                            typename IndexableGetter> \
+                  BoundingVolumeHierarchy(ExecutionSpace, Values values, IndexableGetter) \
+                  -> BoundingVolumeHierarchy<typename AccessTraits<Values>::memory_space, \
+                                             std::remove_cvref_t<decltype(AccessTraits<Values>::get(values, 0))>, \
+                                             IndexableGetter>
+
+   The first guide uses the default ``IndexableGetter``.
+
+
 Example
 -------
 The example below builds a tree over four boxes and searches for the ones that
