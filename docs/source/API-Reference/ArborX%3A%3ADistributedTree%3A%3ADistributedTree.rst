@@ -37,7 +37,7 @@ Type requirements
 
   ArborX provides specializations for Kokkos views but a user may specialize it for their types.
 
-* ``IndexableGetter`` must provide an ``operator()`` taking in a type that decays to ``Value`` and returning an indexable (geometric object).
+* :doc:`spatial_indexes/IndexableGetter` must provide an ``operator()`` taking in a type that decays to ``Value`` and returning an indexable (geometric object).
 
 
 Complexity
