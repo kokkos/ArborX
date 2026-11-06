@@ -193,6 +193,7 @@ reference.
 .. cpp:type:: template <typename Values> \
               access_traits_value_t = std::remove_cvref_t<decltype(AccessTraits<Values>::get(std::declval<Values const &>(), 0))>
    :noindexentry:
+   :no-contents-entry:
 
    Exposition only: the type of the values provided by
    ``AccessTraits<Values>``.
@@ -207,6 +208,7 @@ reference.
                   -> BoundingVolumeHierarchy<typename AccessTraits<Values>::memory_space, \
                                              access_traits_value_t<Values>, \
                                              IndexableGetter>
+   :no-contents-entry:
 
    The first guide uses the default ``IndexableGetter``.
 
