@@ -69,19 +69,16 @@ implementation, without printing anything.
       Print statistics about the dense cells to the standard output if
       ``verbose`` is ``true``.
 
-      :return: ``*this``.
 
    .. cpp:function:: Parameters &setImplementation(Implementation impl)
 
       Select the implementation of the algorithm.
 
-      :return: ``*this``.
 
    .. cpp:function:: Parameters &setAlgorithm(Algorithm algorithm)
 
       Select the variant of the algorithm.
 
-      :return: ``*this``.
 
 .. cpp:enum-class:: Implementation
 
