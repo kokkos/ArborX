@@ -183,15 +183,22 @@ The ``MemorySpace`` and ``Value`` template arguments are deduced from the
 type returned by :cpp:func:`AccessTraits::get`, without cv-qualifiers and
 reference.
 
+.. cpp:type:: template <typename Values> \
+              access_traits_value_t = std::remove_cvref_t<decltype(AccessTraits<Values>::get(std::declval<Values const &>(), 0))>
+   :noindexentry:
+
+   Exposition only: the type of the values provided by
+   ``AccessTraits<Values>``.
+
 .. cpp:function:: template <typename ExecutionSpace, typename Values> \
-                  BoundingVolumeHierarchy(ExecutionSpace, Values values) \
+                  BoundingVolumeHierarchy(ExecutionSpace, Values) \
                   -> BoundingVolumeHierarchy<typename AccessTraits<Values>::memory_space, \
-                                             std::remove_cvref_t<decltype(AccessTraits<Values>::get(values, 0))>>
+                                             access_traits_value_t<Values>>
                   template <typename ExecutionSpace, typename Values, \
                             typename IndexableGetter> \
-                  BoundingVolumeHierarchy(ExecutionSpace, Values values, IndexableGetter) \
+                  BoundingVolumeHierarchy(ExecutionSpace, Values, IndexableGetter) \
                   -> BoundingVolumeHierarchy<typename AccessTraits<Values>::memory_space, \
-                                             std::remove_cvref_t<decltype(AccessTraits<Values>::get(values, 0))>, \
+                                             access_traits_value_t<Values>, \
                                              IndexableGetter>
 
    The first guide uses the default ``IndexableGetter``.
