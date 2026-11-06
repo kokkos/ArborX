@@ -22,7 +22,7 @@ Template parameters
 -------------------
 * ``MemorySpace``: valid Kokkos memory space
 * ``Value``: type of objects stored in the container
-* ``IndexableGetter``: function extracting an indexable geometry from ``Value``
+* :doc:`spatial_indexes/IndexableGetter`: function extracting an indexable geometry from ``Value``
 * ``BoundingVolume``: bounding volume used for internal nodes
 
 
@@ -44,7 +44,7 @@ Member types
    * - ``bounding_volume_type``
      - ``BoundingVolume``
    * - ``indexable_getter_type``
-     - ``IndexableGetter``
+     - :doc:`spatial_indexes/IndexableGetter`
 
 
 Member functions

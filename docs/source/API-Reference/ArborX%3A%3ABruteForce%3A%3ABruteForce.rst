@@ -32,7 +32,7 @@ Type requirements
 * ``MemorySpace`` must be accessible from ``ExecutionSpace`` (i.e., ``Kokkos::SpaceAccessibility<ExecutionSpace, MemorySpace>::accessible`` must be ``true``).
 * A specialization of :cpp:struct:`AccessTraits` must match ``Values`` as the template argument.
 * The return type of :cpp:func:`AccessTraits::get` must decay to ``Value``.
-* ``IndexableGetter`` must provide an ``operator()`` taking in a type that decays to ``Value`` and returning an indexable (geometric object).
+* :doc:`spatial_indexes/IndexableGetter` must provide an ``operator()`` taking in a type that decays to ``Value`` and returning an indexable (geometric object).
 
 
 Complexity

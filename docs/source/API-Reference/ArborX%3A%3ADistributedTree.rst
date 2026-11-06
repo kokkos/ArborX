@@ -17,7 +17,7 @@ Template parameter
 ------------------
 * ``MemorySpace``: valid Kokkos memory space
 * ``Value``: type of objects stored in the container
-* ``IndexableGetter``: function extracting ``Indexable`` from ``Value``
+* :doc:`spatial_indexes/IndexableGetter`: function extracting ``Indexable`` from ``Value``
 * ``BoundingVolume``: bounding volume used for internal nodes
 
 
@@ -39,7 +39,7 @@ Member types
    * - ``bounding_volume_type``
      - ``typename BVH<MemorySpace>::bounding_volume_type``
    * - ``indexable_getter_type``
-     - ``IndexableGetter``
+     - :doc:`spatial_indexes/IndexableGetter`
 
 
 Member functions
