@@ -172,8 +172,15 @@ Defined in header `<ArborX_LinearBVH.hpp> <https://github.com/arborx/ArborX/blob
               BVH = BoundingVolumeHierarchy<MemorySpace, Value, IndexableGetter, BoundingVolume>
 
    A convenience alias for :cpp:class:`BoundingVolumeHierarchy`, for brevity.
-   The two names are interchangeable.
+   The two names are interchangeable, except that the template arguments
+   cannot be deduced through the alias with compilers that do not support class
+   template argument deduction for alias templates (a C++20 feature, which
+   older compilers lack).
+   Use :cpp:class:`BoundingVolumeHierarchy` when relying on
+   :ref:`deduction <bvh-deduction-guides>`.
 
+
+.. _bvh-deduction-guides:
 
 Deduction guides
 ----------------
