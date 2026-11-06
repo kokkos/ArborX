@@ -14,7 +14,7 @@ Applications using ArborX
    "Cabana", "Performance-portable library for particle-based simulations", "ORNL", "https://github.com/ECP-copa/Cabana", "Production", "Sam Reeve", "reevest@ornl.gov", "`paper  <https://doi.org/10.1177/10943420211022829>`__"
    "Compadre", "Compatible Particle Discretization and Remap", "SNL", "https://github.com/sandialabs/compadre", "Experimental", "Paul Kuberry", "pakuber@sandia.gov", ""
    "cpp_ParticleCode", "Particle Tracking to simulate diffusion/advection of aerosol plumes", "SNL", "https://github.com/mschmidt271/cpp_particleCode", "Experimental", "Michael Schmidt", "mjschm@sandia.gov", ""
-   "DataTransferKit", "Solution transfer services for multiphysics applications", "ORNL", "https://github.com/ORNL-CEES/DataTransferKit", "Production", "Damien Lebrun-Grandie", "lebrungrandt@ornl.gov", ""
+   "DataTransferKit", "Solution transfer services for multiphysics applications", "ORNL", "https://github.com/ORNL-CEES/DataTransferKit", "Archived", "Stuart Slattery", "slatterysr@ornl.gov", ""
    "deal.II", "Finite element library",, "https://github.com/dealii/dealii", "Production", "Wolfgang Bangerth", "bangerth@colostate.edu", "`paper  <https://doi.org/10.1515/jnma-2021-0081>`__"
    "HACC/CosmoTools", "Cosmological simulation code", "ANL", "https://cpac.hep.anl.gov/projects/hacc", "Production", "Nick Frontiere", "nfrontiere@anl.gov", "`paper  <https://doi.org/10.3847/1538-4365/aca58d>`__"
    "Halyard", "Mesh generation", "ORNL", "private", "Production", "Sam Reeve", "reevest@ornl.gov", ""
