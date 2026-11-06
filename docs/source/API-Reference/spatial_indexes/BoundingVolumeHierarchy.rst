@@ -23,8 +23,8 @@ Defined in header `<ArborX_LinearBVH.hpp> <https://github.com/arborx/ArborX/blob
       itself as the indexable, or the geometry it wraps if the value is an
       ``ArborX::PairValueIndex``.
    :tparam BoundingVolume: The bounding volume used for the internal nodes.
-      By default, an ``ArborX::Box`` with the dimension and the coordinate
-      type of the indexables.
+      By default, an :doc:`ArborX::Box </API-Reference/Geometries%3A%3ABox>`
+      with the dimension and the coordinate type of the indexables.
 
    The template arguments may be deduced from the arguments of the constructor
    (see the example below).
