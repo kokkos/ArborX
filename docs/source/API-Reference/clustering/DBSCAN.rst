@@ -68,7 +68,6 @@ implementation, without printing anything.
 
       Print statistics about the dense cells to the standard output if
       ``verbose`` is ``true``.
-      Only the ``FDBSCAN_DenseBox`` implementation prints anything.
 
       :return: ``*this``.
 
