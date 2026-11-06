@@ -1,89 +1,141 @@
-:doc:`ArborX </index>`
-
-
-``ArborX::dbscan``
-==================
+``dbscan``
+==========
 Defined in header `<ArborX_DBSCAN.hpp> <https://github.com/arborx/ArborX/blob/master/src/cluster/ArborX_DBSCAN.hpp>`_
 
-.. code-block:: C++
+.. cpp:function:: template <typename ExecutionSpace, typename Primitives, \
+                            typename Labels> \
+                  void dbscan(ExecutionSpace const &space, \
+                              Primitives const &primitives, double eps, \
+                              int core_min_size, Labels &labels, \
+                              DBSCAN::Parameters const &parameters = DBSCAN::Parameters())
 
-    template <typename ExecutionSpace, typename Primitives, typename Labels>
-    void dbscan(ExecutionSpace const &space, Primitives const &primitives,
-                double eps, int core_min_size, Labels &labels);
+   Perform DBSCAN (Density-Based Spatial Clustering of Applications with Noise
+   [1]_) clustering of a set of points.
 
-The free function ``ArborX::dbscan`` performs DBSCAN (Density-Based Spatial Clustering of Applications with Noise) clustering from a set of points.
+   :param space: The execution space in which to run the algorithm.
+   :param primitives: The points to cluster, accessed through
+      :cpp:struct:`AccessTraits`.
+   :param eps: The ``eps`` parameter of the DBSCAN algorithm, i.e., the maximum
+      distance between two points for them to be in the neighborhood of each
+      other.
+      It must be positive.
+   :param core_min_size: The ``minPts`` parameter of the DBSCAN algorithm, i.e.,
+      the number of points in the neighborhood of a point (itself included) for
+      it to be a core point.
+      It must be at least 2.
+   :param labels: A one-dimensional Kokkos view of an integral type, in which
+      the labels are stored.
+      It is resized to the number of points.
+   :param parameters: The options of the algorithm.
+
+   The following requirements must be satisfied.
+
+   * The memory space of ``Primitives`` must be accessible from
+     ``ExecutionSpace``.
+   * A specialization of :cpp:struct:`AccessTraits` must match ``Primitives``
+     as the template argument, and :cpp:func:`AccessTraits::get` must return a
+     :doc:`point </API-Reference/Geometries%3A%3APoint>`.
+   * ``Labels`` must be a Kokkos view of an integral type, accessible from
+     ``ExecutionSpace``.
+
+   After the call, ``labels(i)`` is ``-1`` if the ``i``-th point is noise.
+   Otherwise, it identifies the cluster the point belongs to: points of the same
+   cluster have the same label.
+
+   The labels are not guaranteed to be identical between runs.
+   If a border point is connected to core points belonging to different
+   clusters, it may be assigned to either of them.
+
+   .. note::
+
+      A deprecated overload of ``dbscan()``, which returns the labels instead of
+      taking them as an argument, is still available.
+      Please use the one above.
 
 
 Parameters
 ----------
-* ``space``: the execution space.
-* ``primitives``: points to cluster, accessed through ``ArborX::AccessTraits``.
-* ``eps``: The ``eps`` parameter in the DBSCAN algorithm, corresponding to the maximum distance between two objects to be considered in the neighborhood of each other.
-* ``core_min_size``: The ``minPts`` parameter in the DBSCAN algorithm, corresponding to the number of objects in the neighborhood for a point to be considered a core point.
-* ``labels``: a one-dimensional Kokkos view of an integral type to store the labels
+The options of the algorithm are passed through a ``DBSCAN::Parameters``
+object, whose setters can be chained.
+By default, the algorithm is DBSCAN, run with the FDBSCAN-DenseBox
+implementation, without printing anything.
 
+.. cpp:namespace:: DBSCAN
 
-Returns
--------
+.. cpp:struct:: Parameters
+
+   .. cpp:function:: Parameters &setVerbosity(bool verbose)
+
+      Print statistics about the dense cells to the standard output if
+      ``verbose`` is ``true``.
+      Only the ``FDBSCAN_DenseBox`` implementation prints anything.
+
+      :return: ``*this``.
+
+   .. cpp:function:: Parameters &setImplementation(Implementation impl)
+
+      Select the implementation of the algorithm.
+
+      :return: ``*this``.
+
+   .. cpp:function:: Parameters &setAlgorithm(Algorithm algorithm)
+
+      Select the variant of the algorithm.
+
+      :return: ``*this``.
+
+.. cpp:enum-class:: Implementation
+
+   The implementation of the algorithm, see [2]_.
+
+   .. cpp:enumerator:: FDBSCAN
+
+      Search for the neighbors of each point with a tree.
+
+   .. cpp:enumerator:: FDBSCAN_DenseBox
+
+      In addition, group the points that fall in the same cell of a grid
+      when the cell holds at least ``core_min_size`` points, and index each such
+      dense cell as a single box.
+      This is the default.
+
+.. cpp:enum-class:: Algorithm
+
+   The variant of the algorithm.
+
+   .. cpp:enumerator:: DBSCAN
+
+      Border points, i.e., points that are not core points but are in the
+      neighborhood of one, are assigned to a cluster.
+      This is the default.
+
+   .. cpp:enumerator:: DBSCAN_STAR
+
+      Border points are considered noise.
+      The result is the same as for ``DBSCAN`` when ``core_min_size`` is 2.
 
 
 Example
 -------
-.. code-block:: C++
+The example below clusters ten points in 2D with different values of ``eps`` and
+``core_min_size``.
 
-    #include <ArborX_DBSCAN.hpp>
-
-    #include <iostream>
-
-    int main(int argc, char *argv[])
-    {
-      Kokkos::ScopeGuard guard(argc, argv);
-
-      Kokkos::View<ArborX::Point<3> *> cloud("point_cloud", 9);
-      auto cloud_host = Kokkos::create_mirror_view(cloud);
-      //     0 1 2 3 4
-      //    ----------
-      // 3 |     0 7
-      // 2 |     5 6
-      // 1 | 4 3
-      // 0 | 1 2     8
-      cloud_host[0] = {3.f, 2.f, 0.f};
-      cloud_host[1] = {0.f, 0.f, 0.f};
-      cloud_host[2] = {0.f, 1.f, 0.f};
-      cloud_host[3] = {1.f, 1.f, 0.f};
-      cloud_host[4] = {1.f, 0.f, 0.f};
-      cloud_host[5] = {2.f, 2.f, 0.f};
-      cloud_host[6] = {2.f, 3.f, 0.f};
-      cloud_host[7] = {3.f, 3.f, 0.f};
-      cloud_host[8] = {4.f, 0.f, 0.f};
-      Kokkos::deep_copy(cloud, cloud_host);
-
-      using execution_space = decltype(cloud)::execution_space; // where to execute code
-      Kokkos::View<int *> labels("labels", 0);
-      ArborX::dbscan(execution_space{}, cloud, 1.2, 2, labels);
-
-      auto labels_host = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace{}, labels);
-      for (int i = 0; i < (int)labels_host.size(); ++i)
-        std::cout << labels_host(i) << " ";
-      std::cout << std::endl;
-
-      return 0;
-    }
-
-Output
-
-.. code-block:: text
-
-    0 1 1 1 1 0 0 0 -1
-
-
-Notes
------
-The resulting labels are not guaranteed to be identical between the runs. If a border point is connected to core points belonging to different clusters, it may be assigned to either of them.
+.. literalinclude:: ../../../../examples/dbscan/example_dbscan.cpp
+   :language: C++
+   :lines: 11-
 
 
 References
 ----------
-Ester, M., H. P. Kriegel, J. Sander, and X. Xu, “`A Density-Based Algorithm for Discovering Clusters in Large Spatial Databases with Noise <https://dl.acm.org/doi/10.5555/3001460.3001507>`_”. In: Proceedings of
-the 2nd International Conference on Knowledge Discovery and Data Mining,
-Portland, OR, AAAI Press, pp. 226-231. 1996
+.. [1] Ester, M., H. P. Kriegel, J. Sander, and X. Xu, "`A Density-Based
+   Algorithm for Discovering Clusters in Large Spatial Databases with Noise
+   <https://dl.acm.org/doi/10.5555/3001460.3001507>`_".
+   In: Proceedings of the 2nd International Conference on Knowledge Discovery
+   and Data Mining, Portland, OR, AAAI Press, pp. 226-231. 1996
+
+.. [2] Prokopenko, A., Lebrun-Grandie, D. and Arndt, A., "`Fast tree-based
+   algorithms for DBSCAN for low-dimensional data on GPUs
+   <https://doi.org/10.1145/3605573.3605594>`_".
+   In: Proceedings of the 52nd International Conference on Parallel Processing
+   (ICPP '23), Association for Computing Machinery, New York, NY, USA,
+   pp. 503-512. 2023
