@@ -43,8 +43,7 @@ Defined in header `<ArborX_LinearBVH.hpp> <https://github.com/arborx/ArborX/blob
                                typename SpaceFillingCurve = Experimental::Morton64> \
                      BoundingVolumeHierarchy(ExecutionSpace const &space, \
                                              Values const &values, \
-                                             IndexableGetter const &indexable_getter = IndexableGetter(), \
-                                             SpaceFillingCurve const &curve = SpaceFillingCurve())
+                                             IndexableGetter const &indexable_getter = IndexableGetter())
 
       Construct a tree from a given data source.
 
@@ -52,8 +51,6 @@ Defined in header `<ArborX_LinearBVH.hpp> <https://github.com/arborx/ArborX/blob
       :param values: The values to store in the tree.
       :param indexable_getter: A function object to transform a value into an
          indexable.
-      :param curve: The space-filling curve used to order the values.
-         The default is suitable for most uses.
 
       The following requirements must be satisfied.
 
