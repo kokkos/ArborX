@@ -2,6 +2,7 @@ Clustering
 ==========
 
 * :doc:`DBSCAN <clustering/DBSCAN>`
+* :doc:`MinimumSpanningTree <clustering/MinimumSpanningTree>` (experimental)
 
 .. toctree::
    :hidden:
@@ -9,3 +10,4 @@ Clustering
    :titlesonly:
 
    clustering/DBSCAN
+   clustering/MinimumSpanningTree
