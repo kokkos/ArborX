@@ -34,10 +34,14 @@ struct Morton32
   KOKKOS_FUNCTION auto operator()(Box const &scene_bounding_box,
                                   Geometry const &geometry) const
   {
-    static_assert(GeometryTraits::is_box_v<Box>);
+    using namespace GeometryTraits;
     using Details::returnCentroid;
-    auto p = returnCentroid(geometry);
-    Details::translateAndScale(p, p, scene_bounding_box);
+    static_assert(is_box_v<Box>);
+    auto const &up = returnCentroid(geometry);
+    using UserPoint = std::remove_cvref_t<decltype(up)>;
+    static_assert(is_point_v<UserPoint>);
+    ArborX::Point<dimension_v<UserPoint>, coordinate_type_t<UserPoint>> p;
+    Details::translateAndScale(up, p, scene_bounding_box);
     return Details::morton32(p);
   }
 };
@@ -48,10 +52,14 @@ struct Morton64
   KOKKOS_FUNCTION auto operator()(Box const &scene_bounding_box,
                                   Geometry const &geometry) const
   {
-    static_assert(GeometryTraits::is_box_v<Box>);
+    using namespace GeometryTraits;
     using Details::returnCentroid;
-    auto p = returnCentroid(geometry);
-    Details::translateAndScale(p, p, scene_bounding_box);
+    static_assert(is_box_v<Box>);
+    auto const &up = returnCentroid(geometry);
+    using UserPoint = std::remove_cvref_t<decltype(up)>;
+    static_assert(is_point_v<UserPoint>);
+    ArborX::Point<dimension_v<UserPoint>, coordinate_type_t<UserPoint>> p;
+    Details::translateAndScale(up, p, scene_bounding_box);
     return Details::morton64(p);
   }
 };
