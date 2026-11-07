@@ -51,7 +51,6 @@ Defined in header `<ArborX_MinimumSpanningTree.hpp> <https://github.com/arborx/A
         :cpp:func:`AccessTraits\<Primitives\>::get() <AccessTraits::get>` must
         return a :doc:`point </API-Reference/Geometries%3A%3APoint>`.
       * There must be at least two points.
-        Otherwise, an ``ArborX::SearchException`` is thrown.
 
       If ``k`` is 1 or less, the weight of the edge between the points *a* and
       *b* is the distance between them.
