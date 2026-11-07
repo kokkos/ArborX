@@ -15,6 +15,7 @@
 #include <ArborX_Box.hpp>
 #include <ArborX_LinearBVH.hpp>
 #include <ArborX_Sphere.hpp>
+#include <algorithms/ArborX_Convert.hpp>
 #include <detail/ArborX_AccessTraits.hpp>
 #include <detail/ArborX_CartesianGrid.hpp>
 #include <detail/ArborX_FDBSCAN.hpp>
@@ -115,10 +116,8 @@ struct AccessTraits<
     using Point = std::decay_t<decltype(point)>;
     constexpr int DIM = GeometryTraits::dimension_v<Point>;
     using Coordinate = GeometryTraits::coordinate_type_t<Point>;
-    // FIXME reinterpret_cast is dangerous here if access traits return user
-    // point structure (e.g., struct MyPoint { float y; float x; })
-    auto const &hyper_point =
-        reinterpret_cast<::ArborX::Point<DIM, Coordinate> const &>(point);
+    auto hyper_point =
+        Details::convert<::ArborX::Point<DIM, Coordinate>>(point);
     return attach(intersects(Sphere{hyper_point, w._r}), (int)index);
   }
 };
@@ -165,10 +164,8 @@ struct AccessTraits<
     constexpr int DIM = GeometryTraits::dimension_v<Point>;
     using Coordinate = typename GeometryTraits::coordinate_type<Point>::type;
 
-    // FIXME reinterpret_cast is dangerous here if access traits return user
-    // point structure (e.g., struct MyPoint { float y; float x; })
-    auto const &hyper_point =
-        reinterpret_cast<::ArborX::Point<DIM, Coordinate> const &>(point);
+    auto hyper_point =
+        Details::convert<::ArborX::Point<DIM, Coordinate>>(point);
     return Box{hyper_point, hyper_point};
   }
   using memory_space = typename MixedOffsets::memory_space;
