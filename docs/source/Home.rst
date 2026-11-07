@@ -19,6 +19,11 @@ Here you can learn the syntax of functions and classes.
 ---------------
 Here you can find the meaning of terms used in the API descriptions.
 
+
+:doc:`Publications`
+-------------------
+Here you can find the papers describing ArborX and its algorithms.
+
 .. toctree::
    :hidden:
    :maxdepth: 1
@@ -27,6 +32,7 @@ Here you can find the meaning of terms used in the API descriptions.
 
    Build
    Glossary
+   Publications
    API-Reference/MigrationGuide
    API-Reference
    API-Reference v1 <API-Reference/v1/index>
