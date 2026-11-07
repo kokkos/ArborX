@@ -155,9 +155,10 @@ endforeach()
 
 list(APPEND ARBORX_TEST_QUERY_TREE_SOURCES
   tstQueryTreeCallbackQueryPerThread.cpp
+  tstQueryTreeCustomPoint.cpp
+  tstQueryTreeIntersectsKDOP.cpp
   tstQueryTreeRay.cpp
   tstQueryTreeTraversalPolicy.cpp
-  tstQueryTreeIntersectsKDOP.cpp
   tstPredicateHelpers.cpp
   tstKokkosToolsAnnotations.cpp
   tstKokkosToolsExecutionSpaceInstances.cpp
