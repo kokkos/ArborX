@@ -9,7 +9,8 @@ endif()
 # use gnu standard install directories
 include(GNUInstallDirs)
 
-find_package(Kokkos 4.5 REQUIRED CONFIG)
+set(ARBORX_MINIMUM_KOKKOS_VERSION 4.5)
+find_package(Kokkos ${ARBORX_MINIMUM_KOKKOS_VERSION} REQUIRED CONFIG)
 message(STATUS "Found Kokkos: ${Kokkos_DIR} (version \"${Kokkos_VERSION}\")")
 
 # We use minimum compiler versions from Kokkos, with the exception for NVCC (>= 11.5)

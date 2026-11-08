@@ -4,11 +4,11 @@ set(CMAKE_MODULE_PATH ${CMAKE_CURRENT_LIST_DIR} ${CMAKE_MODULE_PATH})
 
 include(CMakeFindDependencyMacro)
 
-find_package(Kokkos QUIET)
+find_package(Kokkos @ARBORX_MINIMUM_KOKKOS_VERSION@ QUIET)
 if(NOT Kokkos_FOUND)
   # If Kokkos was not found, try to use Kokkos used when building ArborX
   set(Kokkos_DIR @Kokkos_DIR@)
-  find_dependency(Kokkos)
+  find_dependency(Kokkos @ARBORX_MINIMUM_KOKKOS_VERSION@)
 endif()
 
 include("${CMAKE_CURRENT_LIST_DIR}/ArborXSettings.cmake")
