@@ -32,6 +32,10 @@ Algorithms
   In: Proceedings of the 53rd International Conference on Parallel Processing
   (ICPP '24), Association for Computing Machinery, New York, NY, USA,
   pp. 908-918. 2024
+* Prokopenko, A. and Lebrun-Grandie, D., "`Revising Apetrei's bounding volume
+  hierarchy construction algorithm to allow stackless traversal
+  <https://arxiv.org/abs/2402.00665>`_".
+  arXiv:2402.00665 [cs.DS]. 2024
 * Prokopenko, A., Lebrun-Grandie, D., and Arndt, D., "`Fast tree-based algorithms
   for DBSCAN for low-dimensional data on GPUs
   <https://doi.org/10.1145/3605573.3605594>`_".
