@@ -83,7 +83,6 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(minimum_spanning_tree_golden_test, DeviceType,
                               ARBORX_DEVICE_TYPES)
 {
   using ExecutionSpace = typename DeviceType::execution_space;
-  using MemorySpace = typename DeviceType::memory_space;
   ExecutionSpace exec_space;
 
   auto points = ArborXTest::toView<ExecutionSpace>(
@@ -95,8 +94,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(minimum_spanning_tree_golden_test, DeviceType,
 
   using ArborX::Experimental::MinimumSpanningTree;
   auto edges = Kokkos::create_mirror_view_and_copy(
-      Kokkos::HostSpace{},
-      MinimumSpanningTree<MemorySpace>(exec_space, points).edges);
+      Kokkos::HostSpace{}, MinimumSpanningTree(exec_space, points).edges);
   std::sort(edges.data(), edges.data() + edges.size());
 
   BOOST_TEST(
@@ -125,8 +123,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(minimum_spanning_tree_golden_test, DeviceType,
   for (auto k : {5, 10, 15})
   {
     auto edges = Kokkos::create_mirror_view_and_copy(
-        Kokkos::HostSpace{},
-        MinimumSpanningTree<MemorySpace>(exec_space, points, k).edges);
+        Kokkos::HostSpace{}, MinimumSpanningTree(exec_space, points, k).edges);
     total_weight[k] = std::accumulate(
         edges.data(), edges.data() + edges.size(), 0.,
         [](auto const &sum, auto const &b) { return sum + b.weight; });

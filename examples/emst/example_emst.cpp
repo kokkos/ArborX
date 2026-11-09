@@ -56,8 +56,7 @@ int main(int argc, char *argv[])
   cloud_host[5] = {2, 4};
   Kokkos::deep_copy(cloud, cloud_host);
 
-  ArborX::Experimental::MinimumSpanningTree<MemorySpace> emst(ExecutionSpace{},
-                                                              cloud);
+  ArborX::Experimental::MinimumSpanningTree emst(ExecutionSpace{}, cloud);
   auto edges = emst.edges;
 
   // Expected output:
