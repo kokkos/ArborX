@@ -315,6 +315,11 @@ private:
   }
 };
 
+template <class ExecutionSpace, class Primitives>
+KOKKOS_DEDUCTION_GUIDE MinimumSpanningTree(ExecutionSpace, Primitives, int = -1)
+    -> MinimumSpanningTree<
+        typename Details::AccessValues<Primitives>::memory_space>;
+
 } // namespace ArborX::Experimental
 
 #endif
