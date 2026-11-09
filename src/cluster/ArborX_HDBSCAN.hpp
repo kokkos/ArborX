@@ -29,7 +29,7 @@ auto hdbscan(ExecutionSpace const &exec_space, Primitives const &primitives,
 
   using namespace ArborX::Details;
 
-  using MemorySpace = typename Primitives::memory_space;
+  using MemorySpace = typename AccessTraits<Primitives>::memory_space;
 
   if (dendrogram_impl == DendrogramImplementation::BORUVKA)
   {
