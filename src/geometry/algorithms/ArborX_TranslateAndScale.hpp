@@ -20,14 +20,16 @@ namespace ArborX::Details
 {
 // transformation that maps the unit cube into a new axis-aligned box
 // NOTE safe to perform in-place
-template <typename Point, typename Box>
-  requires(GeometryTraits::is_point_v<Point> && GeometryTraits::is_box_v<Box>)
-KOKKOS_FUNCTION void translateAndScale(Point const &in, Point &out,
+template <typename PointIn, typename PointOut, typename Box>
+  requires(GeometryTraits::is_point_v<PointIn> &&
+           GeometryTraits::is_point_v<PointOut> &&
+           GeometryTraits::is_box_v<Box>)
+KOKKOS_FUNCTION void translateAndScale(PointIn const &in, PointOut &out,
                                        Box const &ref)
 {
-  static_assert(GeometryTraits::dimension_v<Point> ==
-                GeometryTraits::dimension_v<Box>);
-  constexpr int DIM = GeometryTraits::dimension_v<Point>;
+  constexpr int DIM = GeometryTraits::dimension_v<PointIn>;
+  static_assert(GeometryTraits::dimension_v<PointOut> == DIM);
+  static_assert(GeometryTraits::dimension_v<Box> == DIM);
   for (int d = 0; d < DIM; ++d)
   {
     auto const a = ref.minCorner()[d];
