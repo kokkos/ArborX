@@ -86,6 +86,28 @@ Defined in header `<ArborX_MinimumSpanningTree.hpp> <https://github.com/arborx/A
    Defined in header `<ArborX_WeightedEdge.hpp> <https://github.com/arborx/ArborX/blob/master/src/cluster/detail/ArborX_WeightedEdge.hpp>`_.
 
 
+Deduction guides
+----------------
+The ``MemorySpace`` template argument is deduced from the ``Primitives`` passed
+to the constructor through :cpp:struct:`AccessTraits`, so it does not need to be
+spelled out.
+For instance, ``MinimumSpanningTree mst(space, points)`` constructs a
+``MinimumSpanningTree<MemorySpace>``, where ``MemorySpace`` is the memory space
+of ``points``.
+
+.. cpp:function:: template <typename ExecutionSpace, typename Primitives> \
+                  Experimental::MinimumSpanningTree(ExecutionSpace, Primitives, int = -1) \
+                  -> Experimental::MinimumSpanningTree<typename AccessTraits<Primitives>::memory_space>
+   :no-contents-entry:
+
+   .. versionadded:: 2.2
+
+   The guide applies whether or not ``k`` is passed.
+   Its value is ignored: it only takes part in deduction, and the ``k`` of the
+   constructor, see above for its default, is the one used.
+   The second, defaulted, template parameter keeps its default value.
+
+
 Example
 -------
 The example below computes the Euclidean minimum spanning tree of six points in
