@@ -14,10 +14,6 @@ Library
   Library: Version 2.0 <https://doi.org/10.1145/3772288>`_".
   ACM Transactions on Mathematical Software, vol. 51, no. 4, Article 30,
   pp. 1-10. December 2025
-* Prokopenko, A., Arndt, D., Lebrun-Grandie, D., et al., "`Advances in ArborX to
-  support exascale applications <https://doi.org/10.1177/10943420241298296>`_".
-  The International Journal of High Performance Computing Applications,
-  vol. 39, no. 1, pp. 167-176. 2025
 * Lebrun-Grandie, D., Prokopenko, A., Turcksin, B., and Slattery, S. R., "`ArborX:
   A Performance Portable Geometric Search Library
   <https://doi.org/10.1145/3412558>`_".
@@ -26,6 +22,10 @@ Library
 
 Algorithms
 ----------
+* Prokopenko, A., Arndt, D., Lebrun-Grandie, D., et al., "`Advances in ArborX to
+  support exascale applications <https://doi.org/10.1177/10943420241298296>`_".
+  The International Journal of High Performance Computing Applications,
+  vol. 39, no. 1, pp. 167-176. 2025
 * Sao, P., Prokopenko, A., and Lebrun-Grandie, D., "`PANDORA: A Parallel
   Dendrogram Construction Algorithm for Single Linkage Clustering on GPU
   <https://doi.org/10.1145/3673038.3673148>`_".
