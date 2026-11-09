@@ -78,8 +78,13 @@ struct Dendrogram
     Kokkos::Profiling::popRegion();
   }
 
+  // enclosing function for an extended __host__ __device__ lambda cannot have
+  // private or protected access within its class
+#ifndef KOKKOS_COMPILER_NVCC
+private:
+#endif
   template <typename ExecutionSpace>
-  void splitEdges(
+  static void splitEdges(
       ExecutionSpace const &exec_space,
       Kokkos::View<Experimental::WeightedEdge *, MemorySpace> edges,
       Kokkos::View<Details::UnweightedEdge *, MemorySpace> unweighted_edges,
