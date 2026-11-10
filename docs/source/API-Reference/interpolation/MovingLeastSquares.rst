@@ -109,19 +109,19 @@ parameterized by a smoothness-related integer ``N``.
 
 .. cpp:struct:: template <std::size_t N> Interpolation::CRBF::Wendland
 
-   The Wendland functions, for ``N`` in 0, 2, 4, and 6.
+   The Wendland functions [1]_ are available for ``N`` in 0, 2, 4, and 6.
    For instance, ``Wendland<0>`` is ``(1 - x)^2`` and ``Wendland<2>`` is
    ``(1 - x)^4 (4x + 1)``, for ``x`` in [0, 1].
 
 .. cpp:struct:: template <std::size_t N> Interpolation::CRBF::Wu
 
-   The Wu functions, for ``N`` in 2 and 4.
+   The Wu functions [2]_ are available for ``N`` in 2 and 4.
    For instance, ``Wu<2>`` is ``(1 - x)^4 (3x^3 + 12x^2 + 16x + 4)``, for ``x``
    in [0, 1].
 
 .. cpp:struct:: template <std::size_t N> Interpolation::CRBF::Buhmann
 
-   The Buhmann functions, for ``N`` in 2, 3, and 4.
+   The Buhmann functions [3]_ are available for ``N`` in 2, 3, and 4.
 
 Each of these has a static member function that evaluates the function.
 Its argument is clamped to [0, 1] after taking its absolute value, and ``DIM`` is
@@ -164,4 +164,20 @@ It prints
    Approximated values: 0.503076 -0.156426 0.87675
    Real values        : 0.540302 -0.178246 0.914443
    Differences        : 0.0372265 0.0218204 0.0376936
+
+
+References
+----------
+.. [1] Wendland, H., "`Piecewise polynomial, positive definite and compactly
+   supported radial functions of minimal degree
+   <https://doi.org/10.1007/BF02123482>`_".
+   Advances in Computational Mathematics 4, pp. 389-396. 1995
+
+.. [2] Wu, Z., "`Compactly supported positive definite radial functions
+   <https://doi.org/10.1007/BF03177517>`_".
+   Advances in Computational Mathematics 4, pp. 283-292. 1995
+
+.. [3] Buhmann, M. D., "`A new class of radial basis functions with compact
+   support <https://doi.org/10.1090/S0025-5718-00-01251-5>`_".
+   Mathematics of Computation 70(233), pp. 307-318. 2001
 
