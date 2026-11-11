@@ -67,15 +67,18 @@ cmake_dependent_option(ARBORX_ENABLE_GPU_AWARE_MPI
                        "Allow using device data in MPI communication"
                        OFF "ARBORX_ENABLE_MPI" OFF)
 
+set(ARBORX_TRILINOS_MINIMUM_VERSION 16.0)
 option(ARBORX_ENABLE_TRILINOS "Enable Trilinos support" OFF)
 if(ARBORX_ENABLE_TRILINOS)
   if (NOT ARBORX_ENABLE_MPI)
     message(FATAL_ERROR "Trilinos support requires MPI support. Please enable ARBORX_ENABLE_MPI.")
   endif()
   set(ARBORX_TRILINOS_COMPONENT_LIST "PanzerAdaptersSTK;PanzerDiscFE")
+  # TribitsProjectWriteConfigFile.cmake in Trilinos sets COMPATIBILITY to SameMajorVersion.
+  # Thus, we check the version post finding.
   find_package(Trilinos REQUIRED CONFIG COMPONENTS ${ARBORX_TRILINOS_COMPONENT_LIST})
-  if (Trilinos_VERSION VERSION_LESS 16.0)
-    message(FATAL_ERROR "Trilinos 16.0 or newer is required")
+  if (Trilinos_VERSION VERSION_LESS ${ARBORX_TRILINOS_MINIMUM_VERSION})
+    message(FATAL_ERROR "Trilinos ${ARBORX_TRILINOS_MINIMUM_VERSION} or newer is required")
   endif()
   foreach(component ${ARBORX_TRILINOS_COMPONENT_LIST})
     target_link_libraries(ArborX INTERFACE ${component}::all_libs)
