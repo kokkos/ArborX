@@ -20,6 +20,8 @@
 
 #include <Kokkos_Core.hpp>
 
+#include <desul/atomics.hpp>
+
 namespace ArborX::Details::TreeConstruction
 {
 
@@ -238,8 +240,16 @@ public:
         // split. The first thread up stores the updated range value (which
         // also serves as a flag). The second thread up finishes constructing
         // the full parent range.
-        range_right = Kokkos::atomic_compare_exchange(
-            &_ranges(apetrei_parent), UNTOUCHED_NODE, range_left);
+        // The range is also the readiness flag for the child node. On success,
+        // acquire-release ordering publishes this thread's preceding node
+        // writes; on failure, its acquire part makes the other child's writes
+        // visible before that node is read below. Kokkos's default
+        // atomic_compare_exchange is relaxed, so use Desul's explicitly
+        // ordered operation here. The symmetric CAS below needs the same
+        // ordering.
+        range_right = desul::atomic_compare_exchange(
+            &_ranges(apetrei_parent), UNTOUCHED_NODE, range_left,
+            desul::MemoryOrderAcqRel(), desul::MemoryScopeDevice());
 
         // Use an atomic flag per internal node to terminate the first
         // thread that enters it, while letting the second one through.
@@ -258,11 +268,6 @@ public:
 
         delta_right = delta(range_right);
 
-        // Memory synchronization below ensures write from other threads to the
-        // child bounding volume memory location are visible from the current
-        // thread.
-        // NOTE we need acquire semantics at the device scope
-        Kokkos::load_fence();
         if (right_child_is_leaf)
           expand(bounding_volume,
                  _indexable_getter(_leaf_nodes(right_child).value));
@@ -276,8 +281,9 @@ public:
 
         int const apetrei_parent = range_left - 1;
 
-        range_left = Kokkos::atomic_compare_exchange(
-            &_ranges(apetrei_parent), UNTOUCHED_NODE, range_right);
+        range_left = desul::atomic_compare_exchange(
+            &_ranges(apetrei_parent), UNTOUCHED_NODE, range_right,
+            desul::MemoryOrderAcqRel(), desul::MemoryScopeDevice());
         if (range_left == UNTOUCHED_NODE)
           break;
 
@@ -286,7 +292,6 @@ public:
 
         delta_left = delta(range_left - 1);
 
-        Kokkos::load_fence();
         if (left_child_is_leaf)
           expand(bounding_volume,
                  _indexable_getter(_leaf_nodes(left_child).value));
