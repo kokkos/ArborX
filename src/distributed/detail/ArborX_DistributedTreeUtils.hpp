@@ -56,6 +56,28 @@ void filterOutEmptyRanks(ExecutionSpace const &space,
   Kokkos::resize(space, attached_volumes, num_nonempty);
 }
 
+template <typename ExecutionSpace, typename VolumesAndSizes, typename RankSizes,
+          typename SizeType>
+void storeRankSizes(ExecutionSpace const &space,
+                    VolumesAndSizes const &volumes_and_sizes,
+                    RankSizes &rank_sizes, SizeType &global_size)
+{
+  auto const n = volumes_and_sizes.extent(0);
+  Kokkos::resize(Kokkos::view_alloc(space, Kokkos::WithoutInitializing),
+                 rank_sizes, n);
+
+  global_size = 0;
+  Kokkos::parallel_reduce(
+      "ArborX::DistributedTree::DistributedTree::store_rank_sizes",
+      Kokkos::RangePolicy<ExecutionSpace>(space, 0, n),
+      KOKKOS_LAMBDA(int i, SizeType &update) {
+        auto const rank_size = volumes_and_sizes(i).second;
+        rank_sizes(i) = rank_size;
+        update += rank_size;
+      },
+      global_size);
+}
+
 template <typename ExecutionSpace, typename QueryIdsView, typename OffsetView>
 void countResults(ExecutionSpace const &space, int n_queries,
                   QueryIdsView const &query_ids, OffsetView &offset)
