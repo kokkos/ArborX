@@ -62,7 +62,7 @@ void DistributedTreeImpl::phaseI(ExecutionSpace const &space, Tree const &tree,
   // is the number of neighbors queried for
   {
     auto const n_predicates = predicates.size();
-    auto const &bottom_tree_sizes = tree._bottom_tree_sizes;
+    auto const &rank_sizes = tree._rank_sizes;
     Kokkos::View<int *, MemorySpace> new_offset(
         Kokkos::view_alloc(space, offset.label()), n_predicates + 1);
     auto new_nearest_ranks =
@@ -79,7 +79,7 @@ void DistributedTreeImpl::phaseI(ExecutionSpace const &space, Tree const &tree,
                j < offset(i + 1) && leaves_count < k; ++j, ++update)
           {
             auto const rank = nearest_ranks(j);
-            leaves_count += bottom_tree_sizes(rank);
+            leaves_count += rank_sizes(rank);
             if (final_pass)
               new_nearest_ranks(update) = rank;
           }
