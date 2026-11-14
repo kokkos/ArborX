@@ -38,9 +38,6 @@ using Point = ArborX::Point<3>;
 using Box = ArborX::Box<3>;
 using Ray = ArborX::Experimental::Ray<>;
 
-// The total energy that is distributed across all rays.
-float const total_energy = 4000.f;
-
 // Energy a rays loses when passing through a cell.
 KOKKOS_INLINE_FUNCTION float lost_energy(float ray_energy, float path_length)
 {
@@ -288,6 +285,9 @@ int main(int argc, char *argv[])
   // Construct BVH
   ArborX::BoundingVolumeHierarchy bvh{
       exec_space, ArborX::Experimental::attach_indices(boxes)};
+
+  // The total energy that is distributed across all rays.
+  constexpr float total_energy = 4000.f;
 
   // OrderedIntersects-based approach
   Kokkos::View<float *, MemorySpace> energy_ordered_intersects;
