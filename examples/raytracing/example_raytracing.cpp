@@ -38,9 +38,6 @@ using Point = ArborX::Point<3>;
 using Box = ArborX::Box<3>;
 using Ray = ArborX::Experimental::Ray<>;
 
-// The total energy that is distributed across all rays.
-float const total_energy = 4000.f;
-
 // Energy a rays loses when passing through a cell.
 KOKKOS_INLINE_FUNCTION float lost_energy(float ray_energy, float path_length)
 {
@@ -214,6 +211,9 @@ int main(int argc, char *argv[])
     std::cout << desc << '\n';
     return 1;
   }
+
+  // The total energy that is distributed across all rays.
+  float const total_energy = 4000.f;
 
   int num_boxes = nx * ny * nz;
   float dx = lx / (float)nx;
