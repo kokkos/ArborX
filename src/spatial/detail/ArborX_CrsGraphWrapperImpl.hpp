@@ -439,20 +439,6 @@ void queryDispatch(Tag, Tree const &tree, ExecutionSpace const &space,
 }
 
 template <typename Tag, typename Tree, typename ExecutionSpace,
-          Details::Concepts::Predicates Predicates, typename Indices,
-          typename Offset>
-  requires(Kokkos::is_view_v<Indices> && Kokkos::is_view_v<Offset>)
-inline void queryDispatch(Tag, Tree const &tree, ExecutionSpace const &space,
-                          Predicates const &predicates, Indices &indices,
-                          Offset &offset,
-                          Experimental::TraversalPolicy const &policy =
-                              Experimental::TraversalPolicy())
-{
-  queryDispatch(Tag{}, tree, space, predicates, DefaultCallback{}, indices,
-                offset, policy);
-}
-
-template <typename Tag, typename Tree, typename ExecutionSpace,
           Details::Concepts::Predicates Predicates, typename OutputView,
           typename OffsetView, typename Callback>
   requires(is_tagged_post_callback<Callback>::value)
@@ -465,43 +451,11 @@ inline void queryDispatch(Tag, Tree const &tree, ExecutionSpace const &space,
 {
   using MemorySpace = typename Tree::memory_space;
 
-  Kokkos::View<typename Tree::value_type *, MemorySpace> indices(
-      "ArborX::CrsGraphWrapper::query::indices", 0);
-  queryDispatch(Tag{}, tree, space, predicates, DefaultCallback{}, indices,
+  Kokkos::View<typename Tree::value_type *, MemorySpace> values(
+      "ArborX::CrsGraphWrapper::query::values", 0);
+  queryDispatch(Tag{}, tree, space, predicates, DefaultCallback{}, values,
                 offset, policy);
-  callback(predicates, offset, indices, out);
-}
-
-template <typename Value, typename Callback,
-          Details::Concepts::Predicates Predicates, typename OutputView>
-  requires(!Kokkos::is_view_v<Callback> &&
-           !is_tagged_post_callback<Callback>::value)
-void check_valid_callback_if_first_argument_is_not_a_view(
-    Callback const &callback, Predicates const &predicates,
-    OutputView const &out)
-{
-  check_valid_callback<Value>(callback, predicates, out);
-}
-
-template <typename Value, typename Callback,
-          Details::Concepts::Predicates Predicates, typename OutputView>
-  requires(!Kokkos::is_view_v<Callback> &&
-           is_tagged_post_callback<Callback>::value)
-void check_valid_callback_if_first_argument_is_not_a_view(Callback const &,
-                                                          Predicates const &,
-                                                          OutputView const &)
-{
-  // TODO
-}
-
-template <typename Value, typename View,
-          Details::Concepts::Predicates Predicates, typename OutputView>
-  requires(Kokkos::is_view_v<View>)
-void check_valid_callback_if_first_argument_is_not_a_view(View const &,
-                                                          Predicates const &,
-                                                          OutputView const &)
-{
-  // do nothing
+  callback(predicates, offset, values, out);
 }
 
 } // namespace CrsGraphWrapperImpl
