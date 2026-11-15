@@ -59,7 +59,7 @@ add_library(ArborX::ArborX ALIAS ArborX)
 
 option(ARBORX_ENABLE_MPI "Enable MPI support" OFF)
 if(ARBORX_ENABLE_MPI)
-  find_package(MPI REQUIRED)
+  find_package(MPI 2.2 REQUIRED)
   target_link_libraries(ArborX INTERFACE MPI::MPI_CXX)
 endif()
 cmake_dependent_option(ARBORX_ENABLE_CUDA_AWARE_MPI

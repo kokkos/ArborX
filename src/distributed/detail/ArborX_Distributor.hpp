@@ -450,13 +450,15 @@ private:
     Kokkos::Profiling::ScopedRegion guard(
         "ArborX::Distributor::preparePointToPointCommunication");
 
-#if OPEN_MPI && (OMPI_MAJOR_VERSION * 10000 + OMPI_MINOR_VERSION * 100 +       \
-                     OMPI_RELEASE_VERSION <                                    \
-                 50011)
-    // OpenMPI prior to 5.0.11 has a bug where MPI_Dist_graph_create may hang
-    // when called multiple times with treematch topo. See
-    //   https://github.com/open-mpi/ompi/issues/13918
-    // Use the old algorithm instead.
+#if MPI_VERSION < 3 ||                                                         \
+    (OPEN_MPI && (OMPI_MAJOR_VERSION * 10000 + OMPI_MINOR_VERSION * 100 +      \
+                      OMPI_RELEASE_VERSION <                                   \
+                  50011))
+    // MPI distributed graph topology is only available since MPI 3.0.
+    // Additionally, Open MPI prior to 5.0.11 has a bug where
+    // MPI_Dist_graph_create may hang when called multiple times with treematch
+    // topo. See https://github.com/open-mpi/ompi/issues/13918. Use the old
+    // algorithm instead.
     int comm_size;
     MPI_Comm_size(_comm, &comm_size);
 
