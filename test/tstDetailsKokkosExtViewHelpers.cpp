@@ -18,6 +18,8 @@
 #include "BoostTest_CUDA_clang_workarounds.hpp"
 #include <boost/test/unit_test.hpp>
 
+#include <type_traits>
+
 #define BOOST_TEST_MODULE KokkosExtViewHelpers
 
 namespace tt = boost::test_tools;
@@ -38,4 +40,69 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(last_element, DeviceType, ARBORX_DEVICE_TYPES)
   Kokkos::View<double[1], DeviceType> u("u");
   Kokkos::deep_copy(u, 3.14);
   BOOST_TEST(lastElement(execution_space, u) == 3.14);
+}
+
+BOOST_AUTO_TEST_CASE_TEMPLATE(clone_unmanaged, DeviceType, ARBORX_DEVICE_TYPES)
+{
+  namespace KE = ArborX::Details::KokkosExt;
+  typename DeviceType::execution_space space;
+
+  using Managed = Kokkos::View<int **, Kokkos::LayoutRight, DeviceType>;
+  using Unmanaged = Kokkos::View<int **, Kokkos::LayoutRight, DeviceType,
+                                 Kokkos::MemoryUnmanaged>;
+
+  Managed owner("owner", 2, 3);
+  Kokkos::deep_copy(space, owner, 42);
+  Unmanaged view(owner.data(), 2, 3);
+
+  auto clone = KE::clone(space, view, "clone");
+  using CloneType = decltype(clone);
+  static_assert(!CloneType::memory_traits::is_unmanaged);
+  static_assert(std::is_same_v<typename CloneType::array_layout,
+                               typename Unmanaged::array_layout>);
+  static_assert(std::is_same_v<typename CloneType::value_type,
+                               typename Unmanaged::value_type>);
+  static_assert(std::is_same_v<typename CloneType::device_type,
+                               typename Unmanaged::device_type>);
+  BOOST_TEST(clone.label() == "clone");
+  BOOST_TEST(clone.data() != owner.data());
+  BOOST_TEST(clone.extent(0) == 2);
+  BOOST_TEST(clone.extent(1) == 3);
+
+  {
+    auto clone_host =
+        Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace{}, clone);
+    for (int i = 0; i < 2; ++i)
+      for (int j = 0; j < 3; ++j)
+        BOOST_TEST(clone_host(i, j) == 42);
+  }
+
+  Kokkos::deep_copy(space, owner, 7);
+  Kokkos::deep_copy(space, clone, 19);
+  space.fence();
+  {
+    auto owner_host =
+        Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace{}, owner);
+    auto clone_host =
+        Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace{}, clone);
+    for (int i = 0; i < 2; ++i)
+      for (int j = 0; j < 3; ++j)
+      {
+        BOOST_TEST(owner_host(i, j) == 7);
+        BOOST_TEST(clone_host(i, j) == 19);
+      }
+  }
+
+  auto empty_clone = KE::cloneWithoutInitializingNorCopying(space, view);
+  using EmptyCloneType = decltype(empty_clone);
+  static_assert(!EmptyCloneType::memory_traits::is_unmanaged);
+  static_assert(std::is_same_v<typename EmptyCloneType::array_layout,
+                               typename Unmanaged::array_layout>);
+  static_assert(std::is_same_v<typename EmptyCloneType::value_type,
+                               typename Unmanaged::value_type>);
+  static_assert(std::is_same_v<typename EmptyCloneType::device_type,
+                               typename Unmanaged::device_type>);
+  BOOST_TEST(empty_clone.data() != owner.data());
+  BOOST_TEST(empty_clone.extent(0) == 2);
+  BOOST_TEST(empty_clone.extent(1) == 3);
 }
