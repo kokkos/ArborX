@@ -158,6 +158,7 @@ void convertLocalToGlobal(MPI_Comm comm, ExecutionSpace const &space,
       space, rank_offsets,
       Kokkos::View<long long *, Kokkos::HostSpace, Kokkos::MemoryUnmanaged>(
           offsets.data(), offsets.size()));
+  space.fence(prefix + " (host offsets must outlive the asynchronous copy)");
 
   Kokkos::resize(Kokkos::view_alloc(space, Kokkos::WithoutInitializing), labels,
                  local_labels.size());
@@ -225,6 +226,8 @@ auto gatherGlobalBoxes(MPI_Comm comm, ExecutionSpace const &space,
                 MPI_BYTE, comm);
 
   Kokkos::deep_copy(space, global_boxes, global_boxes_host);
+  space.fence(
+      "ArborX::DistributedDBSCAN (host staging buffer must outlive the copy)");
 #endif
 
   return global_boxes;
@@ -609,6 +612,7 @@ void communicateMergePairs(MPI_Comm comm, ExecutionSpace const &space,
                  counts.data(), offsets.data(), MPI_BYTE, comm);
 
   Kokkos::deep_copy(space, global_merge_pairs, global_merge_pairs_host);
+  space.fence(prefix + " (host staging buffer must outlive the copy)");
 #endif
 }
 
