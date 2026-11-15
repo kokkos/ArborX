@@ -180,21 +180,24 @@ int main_(MPI_Comm const comm)
   }
   Kokkos::deep_copy(space, predicates, predicates_host);
 
-  auto construction_time = time_monitor.getNewTimer("construction");
+  space.fence("Benchmark::DistributedContact (before tree construction)");
   MPI_Barrier(comm);
+  auto construction_time = time_monitor.getNewTimer("construction");
   construction_time->start();
   ArborX::DistributedTree<MemorySpace, ArborX::PairValueIndex<Box, int>> tree(
       comm, space, ArborX::Experimental::attach_indices<int>(primitives));
+  space.fence("Benchmark::DistributedContact (after tree construction)");
   construction_time->stop();
 
   Kokkos::View<int *, MemorySpace> offsets("Benchmark::offsets", 0);
   Kokkos::View<int *, MemorySpace> indices("Benchmark::indices", 0);
-  auto query_time = time_monitor.getNewTimer("query");
   MPI_Barrier(comm);
+  auto query_time = time_monitor.getNewTimer("query");
   query_time->start();
   tree.query(space, ArborX::Experimental::make_intersects(predicates),
              ArborX::Experimental::ExtractPairIndexCallback{}, indices,
              offsets);
+  space.fence("Benchmark::DistributedContact (after query)");
   query_time->stop();
 
   time_monitor.summarize(comm);
