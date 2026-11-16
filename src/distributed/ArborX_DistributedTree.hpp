@@ -216,6 +216,7 @@ DistributedTreeBase<BottomTree>::DistributedTreeBase(
   auto volumes_and_sizes_host = Kokkos::create_mirror_view(
       Kokkos::view_alloc(host_exec, Kokkos::WithoutInitializing),
       volumes_and_sizes);
+  space.fence(prefix + " (access bottom tree bounds before MPI_Allgather)");
   host_exec.fence();
   volumes_and_sizes_host(comm_rank) = {_bottom_tree.bounds(),
                                        _bottom_tree.size()};
@@ -225,6 +226,7 @@ DistributedTreeBase<BottomTree>::DistributedTreeBase(
                 sizeof(PairVolumeSize), MPI_BYTE, getComm());
 
   Kokkos::deep_copy(space, volumes_and_sizes, volumes_and_sizes_host);
+  space.fence(prefix + "(host staging buffer must outlive the copy)");
 #endif
 
   // Filter out empty ranks

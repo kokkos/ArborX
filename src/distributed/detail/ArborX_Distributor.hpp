@@ -439,6 +439,9 @@ public:
     {
       Kokkos::deep_copy(space, imports, imports_comm);
     }
+    space.fence(
+        "ArborX::Distributor::doPostsAndWaits (host receive buffer must "
+        "outlive the copy)");
 #endif
   }
   size_t getTotalReceiveLength() const { return _src_offsets.back(); }
