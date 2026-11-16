@@ -89,7 +89,8 @@ public:
 
   template <typename ExecutionSpace, typename UserPredicates, typename Callback,
             typename View, typename Offsets>
-    requires(Kokkos::is_view_v<View> && Kokkos::is_view_v<Offsets>)
+    requires(Kokkos::is_view_v<std::remove_cvref_t<View>> &&
+             Kokkos::is_view_v<std::remove_cvref_t<Offsets>>)
   void query(ExecutionSpace const &space, UserPredicates const &user_predicates,
              Callback const &callback, View &view, Offsets &offsets,
              Experimental::TraversalPolicy const &policy =
@@ -111,8 +112,8 @@ public:
 
   template <typename ExecutionSpace, typename UserPredicates, typename View,
             typename Offsets>
-    requires(Kokkos::is_view_v<std::decay_t<View>> &&
-             Kokkos::is_view_v<std::decay_t<Offsets>>)
+    requires(Kokkos::is_view_v<std::remove_cvref_t<View>> &&
+             Kokkos::is_view_v<std::remove_cvref_t<Offsets>>)
   void query(ExecutionSpace const &space, UserPredicates const &user_predicates,
              View &view, Offsets &offsets,
              Experimental::TraversalPolicy const &policy =
