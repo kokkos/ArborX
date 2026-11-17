@@ -96,21 +96,35 @@ static void determineBufferLayout(ExecutionSpace const &space,
       },
       n_unique_ranks);
 
-  unique_ranks.resize(n_unique_ranks);
-  offsets.resize(n_unique_ranks + 1);
+  // Now create subviews containing the elements we actually need, copy
+  // everything to the CPU and fill the output variables.
+  auto restricted_offsets =
+      Kokkos::subview(compact_offsets, std::make_pair(1, n_unique_ranks + 1));
+  auto restricted_unique_ranks =
+      Kokkos::subview(compact_ranks, std::make_pair(0, n_unique_ranks));
 
-  Kokkos::deep_copy(
-      space,
-      Kokkos::View<std::uint64_t *, Kokkos::HostSpace, Kokkos::MemoryUnmanaged>(
-          offsets.data() + 1, n_unique_ranks),
-      Kokkos::subview(compact_offsets, std::make_pair(1, n_unique_ranks + 1)));
-  Kokkos::deep_copy(
-      space,
-      Kokkos::View<int *, Kokkos::HostSpace, Kokkos::MemoryUnmanaged>(
-          unique_ranks.data(), n_unique_ranks),
-      Kokkos::subview(compact_ranks, std::make_pair(0, n_unique_ranks)));
-  space.fence("ArborX::Distributor::determineBufferLayout (device buffers must "
-              "outlive the copies)");
+  auto const unique_ranks_host = Kokkos::create_mirror_view(
+      Kokkos::view_alloc(Kokkos::WithoutInitializing, Kokkos::HostSpace()),
+      restricted_unique_ranks);
+  Kokkos::deep_copy(space, unique_ranks_host, restricted_unique_ranks);
+  auto const offsets_host = Kokkos::create_mirror_view(
+      Kokkos::view_alloc(Kokkos::WithoutInitializing, Kokkos::HostSpace()),
+      restricted_offsets);
+  Kokkos::deep_copy(space, offsets_host, restricted_offsets);
+  space.fence();
+
+  unique_ranks.reserve(n_unique_ranks);
+  offsets.reserve(n_unique_ranks + 1);
+  for (int i = 0; i < n_unique_ranks; ++i)
+  {
+    auto const count =
+        i == 0 ? offsets_host(0) : offsets_host(i) - offsets_host(i - 1);
+    if (count > 0)
+    {
+      offsets.push_back(offsets_host(i));
+      unique_ranks.push_back(unique_ranks_host(i));
+    }
+  }
 }
 
 // Computes the array of indices that sort the input array (in reverse order)
@@ -140,10 +154,15 @@ static void sortAndDetermineBufferLayout(ExecutionSpace const &space,
   // this implements a "sort" which is O(N * R) where (R) is the total number of
   // unique destination ranks. it performs better than other algorithms in the
   // case when (R) is small, but results may vary
+  using MemorySpace = typename Ranks::memory_space;
 
-  auto device_ranks_duplicate = KokkosExt::clone(space, ranks);
-  auto device_permute =
-      KokkosExt::cloneWithoutInitializingNorCopying(space, permute);
+  Kokkos::View<int *, MemorySpace> device_ranks_duplicate(
+      Kokkos::view_alloc(space, Kokkos::WithoutInitializing, ranks.label()),
+      ranks.size());
+  Kokkos::deep_copy(space, device_ranks_duplicate, ranks);
+  auto device_permute = Kokkos::create_mirror_view(
+      Kokkos::view_alloc(space, Kokkos::WithoutInitializing, MemorySpace{}),
+      permute);
   std::uint64_t offset = 0;
   while (true)
   {
