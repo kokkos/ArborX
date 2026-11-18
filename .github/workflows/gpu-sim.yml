@@ -42,12 +42,12 @@ jobs:
 
     steps:
     - name: Checkout
-      uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+      uses: actions/checkout@v7.0.1
       with:
         path: source
 
     - name: Set up the simulated GPU and CUDA toolkit
-      uses: pantheongpu/setup-pantheonsim@dda0c8df8d72627c295edbae525354ba2bcb1687 # v0.1.4
+      uses: pantheongpu/setup-pantheonsim@v0.1.4
       with:
         gpu: nvidia/h100
         cuda-toolkit: "13.0"
@@ -58,7 +58,7 @@ jobs:
         sudo apt-get install -y --no-install-recommends ccache ninja-build libboost-test-dev
 
     - name: Restore ccache
-      uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+      uses: actions/cache@v6.1.0
       with:
         path: ~/.cache/ccache
         key: ccache-gpu-sim-${{ github.sha }}
