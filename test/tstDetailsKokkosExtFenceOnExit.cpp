@@ -43,8 +43,7 @@ struct FenceCounter
   {
     fence_label = std::move(label);
     fence_count = 0;
-    Kokkos::Tools::Experimental::set_begin_fence_callback(
-        begin_fence_callback);
+    Kokkos::Tools::Experimental::set_begin_fence_callback(begin_fence_callback);
   }
   ~FenceCounter()
   {
