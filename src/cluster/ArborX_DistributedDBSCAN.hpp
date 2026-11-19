@@ -19,6 +19,8 @@
 
 #include <Kokkos_Profiling_ScopedRegion.hpp>
 
+#include <cstdint>
+
 #include <mpi.h>
 
 namespace ArborX::Experimental
@@ -58,7 +60,7 @@ void dbscan(MPI_Comm comm, ExecutionSpace const &space,
   bool const is_special_case = (core_min_size == 2);
 
   Points points{primitives}; // NOLINT
-  int const n_local = points.size();
+  std::uint64_t const n_local = points.size();
 
   int comm_rank;
   MPI_Comm_rank(comm, &comm_rank);
@@ -75,7 +77,7 @@ void dbscan(MPI_Comm comm, ExecutionSpace const &space,
       comm, space, points,
       (is_special_case ? eps : std::nextafter(2 * eps, 10 * eps)), ghost_points,
       ghost_ids, ghost_ranks);
-  int const n_ghost = ghost_points.size();
+  std::uint64_t const n_ghost = ghost_points.size();
   Kokkos::Profiling::popRegion();
 
   // Step 2: do local DBSCAN
@@ -103,10 +105,10 @@ void dbscan(MPI_Comm comm, ExecutionSpace const &space,
       Kokkos::subview(labels, Kokkos::make_pair(n_local, n_local + n_ghost)));
   Kokkos::resize(space, labels, n_local);
   // Avoid communicating noise points
-  int num_compressed;
+  std::uint64_t num_compressed;
   Kokkos::parallel_scan(
       prefix + "compress", Kokkos::RangePolicy(space, 0, n_ghost),
-      KOKKOS_LAMBDA(int i, int &update, bool is_final) {
+      KOKKOS_LAMBDA(std::uint64_t i, std::uint64_t & update, bool is_final) {
         if (ghost_labels(i) != -1)
         {
           if (is_final)
@@ -125,7 +127,7 @@ void dbscan(MPI_Comm comm, ExecutionSpace const &space,
   Details::communicateNeighborDataBack(comm, space, ghost_ranks, ghost_ids,
                                        ghost_labels);
   Details::KokkosExt::sortByKey(space, ghost_ids, ghost_labels);
-  Kokkos::View<int *, MemorySpace> ghost_offsets(
+  Kokkos::View<std::uint64_t *, MemorySpace> ghost_offsets(
       Kokkos::view_alloc(space, prefix + "ghost_offsets"), 0);
   Details::computeOffsetsInOrderedView(space, ghost_ids, ghost_offsets);
   Kokkos::resize(ghost_ranks, 0); // free space

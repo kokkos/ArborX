@@ -25,6 +25,8 @@
 #include <Kokkos_Core.hpp>
 #include <Kokkos_Profiling_ScopedRegion.hpp>
 
+#include <cstdint>
+
 #include <mpi.h>
 
 namespace ArborX::Details
@@ -107,9 +109,9 @@ struct ArborX::AccessTraits<ArborX::Details::PointsRequiringResolution<
 namespace ArborX::Details
 {
 
-template <typename Index>
-void computeCountsAndOffsets(MPI_Comm comm, Index k, std::vector<int> &counts,
-                             std::vector<Index> &offsets)
+void computeCountsAndOffsets(MPI_Comm comm, std::uint64_t k,
+                             std::vector<std::uint64_t> &counts,
+                             std::vector<std::uint64_t> &offsets)
 {
   Kokkos::Profiling::ScopedRegion guard(
       "ArborX::DistributedDBSCAN::computeRankOffset");
@@ -121,8 +123,8 @@ void computeCountsAndOffsets(MPI_Comm comm, Index k, std::vector<int> &counts,
 
   counts.resize(comm_size);
   counts[comm_rank] = k;
-  MPI_Allgather(MPI_IN_PLACE, 0, MPI_DATATYPE_NULL, counts.data(), 1, MPI_INT,
-                comm);
+  MPI_Allgather(MPI_IN_PLACE, 0, MPI_DATATYPE_NULL, counts.data(), 1,
+                MPI_UINT64_T, comm);
 
   offsets.resize(comm_size + 1);
   offsets[0] = 0;
@@ -133,7 +135,7 @@ void computeCountsAndOffsets(MPI_Comm comm, Index k, std::vector<int> &counts,
 template <typename ExecutionSpace, typename GhostIds, typename GhostRanks,
           typename LocalLabels, typename GlobalLabels>
 void convertLocalToGlobal(MPI_Comm comm, ExecutionSpace const &space,
-                          long long n_local, GhostIds const &ghost_ids,
+                          std::uint64_t n_local, GhostIds const &ghost_ids,
                           GhostRanks const &ghost_ranks,
                           LocalLabels const &local_labels, GlobalLabels &labels)
 {
@@ -146,17 +148,17 @@ void convertLocalToGlobal(MPI_Comm comm, ExecutionSpace const &space,
   int comm_rank;
   MPI_Comm_rank(comm, &comm_rank);
 
-  std::vector<int> counts;
-  std::vector<long long> offsets;
+  std::vector<std::uint64_t> counts;
+  std::vector<std::uint64_t> offsets;
   computeCountsAndOffsets(comm, n_local, counts, offsets);
 
-  Kokkos::View<long long *, MemorySpace> rank_offsets(
+  Kokkos::View<std::uint64_t *, MemorySpace> rank_offsets(
       Kokkos::view_alloc(space, Kokkos::WithoutInitializing,
                          prefix + "rank_offsets"),
       offsets.size());
   Kokkos::deep_copy(
       space, rank_offsets,
-      Kokkos::View<long long *, Kokkos::HostSpace, Kokkos::MemoryUnmanaged>(
+      Kokkos::View<std::uint64_t *, Kokkos::HostSpace, Kokkos::MemoryUnmanaged>(
           offsets.data(), offsets.size()));
   space.fence(prefix + " (host offsets must outlive the asynchronous copy)");
 
@@ -164,7 +166,8 @@ void convertLocalToGlobal(MPI_Comm comm, ExecutionSpace const &space,
                  local_labels.size());
   Kokkos::parallel_for(
       prefix + "convert_labels",
-      Kokkos::RangePolicy(space, 0, local_labels.size()), KOKKOS_LAMBDA(int i) {
+      Kokkos::RangePolicy(space, (std::uint64_t)0, local_labels.size()),
+      KOKKOS_LAMBDA(std::uint64_t i) {
         auto label = local_labels(i);
         if (label == -1)
         {
@@ -172,7 +175,7 @@ void convertLocalToGlobal(MPI_Comm comm, ExecutionSpace const &space,
           return;
         }
 
-        if (label < n_local)
+        if ((std::uint64_t)label < n_local)
           labels(i) = rank_offsets(comm_rank) + label;
         else
           labels(i) = rank_offsets(ghost_ranks(label - n_local)) +
@@ -297,7 +300,7 @@ void forwardNeighbors(MPI_Comm comm, ExecutionSpace space, Points const &points,
 
   using Point = typename Points::value_type;
 
-  Kokkos::View<int *, MemorySpace> offsets(prefix + "offsets", 0);
+  Kokkos::View<std::uint64_t *, MemorySpace> offsets(prefix + "offsets", 0);
   Kokkos::View<int *, MemorySpace> ranks_to(prefix + "ranks_to", 0);
   computeRanksTo(comm, space, points, eps, offsets, ranks_to);
 
@@ -311,7 +314,8 @@ void forwardNeighbors(MPI_Comm comm, ExecutionSpace space, Points const &points,
   // only one element, independent of the number of points.
   // FIXME: not 100% sure what's going on. We construct a tree based on an
   // invalid box. What's supposed to happen in this case?
-  auto const n_offset_points = (offsets.size() > 0 ? offsets.size() - 1 : 0);
+  std::uint64_t const n_offset_points =
+      (offsets.size() > 0 ? offsets.size() - 1 : 0);
 
   {
     Kokkos::View<Point *, MemorySpace> export_points(
@@ -321,7 +325,7 @@ void forwardNeighbors(MPI_Comm comm, ExecutionSpace space, Points const &points,
     Kokkos::parallel_for(
         prefix + "fill_export_points",
         Kokkos::RangePolicy(space, 0, n_offset_points), KOKKOS_LAMBDA(int i) {
-          for (int j = offsets(i); j < offsets(i + 1); ++j)
+          for (auto j = offsets(i); j < offsets(i + 1); ++j)
             export_points(j) = points(i);
         });
     KokkosExt::reallocWithoutInitializing(space, ghost_points, n_imports);
@@ -336,7 +340,7 @@ void forwardNeighbors(MPI_Comm comm, ExecutionSpace space, Points const &points,
     Kokkos::parallel_for(
         prefix + "fill_export_ids",
         Kokkos::RangePolicy(space, 0, n_offset_points), KOKKOS_LAMBDA(int i) {
-          for (int j = offsets(i); j < offsets(i + 1); ++j)
+          for (auto j = offsets(i); j < offsets(i + 1); ++j)
             export_ids(j) = i;
         });
     KokkosExt::reallocWithoutInitializing(space, ghost_ids, n_imports);
@@ -372,7 +376,7 @@ void communicateNeighborDataBack(MPI_Comm comm, ExecutionSpace space,
   // We are assuming here that if the same rank is related to multiple batches
   // these batches appear consecutively. Hence, no reordering is necessary.
   Distributor<MemorySpace> distributor(comm);
-  int const n_imports = distributor.createFromSends(space, ranks);
+  std::uint64_t const n_imports = distributor.createFromSends(space, ranks);
 
   {
     Kokkos::View<int *, MemorySpace> import_ids(
@@ -467,7 +471,7 @@ void computeMergePairs(ExecutionSpace const &space, CorePoints const &is_core,
 
         // A core point with multiple labels
         auto min_label = (is_local_valid ? local_label : LLONG_MAX);
-        for (int j = begin; j < end; ++j)
+        for (auto j = begin; j < end; ++j)
         {
           auto const label_j = ghost_labels(j);
           KOKKOS_ASSERT(label_j != -1);
@@ -484,7 +488,7 @@ void computeMergePairs(ExecutionSpace const &space, CorePoints const &is_core,
           ++update;
         }
 
-        for (int j = begin; j < end; ++j)
+        for (auto j = begin; j < end; ++j)
         {
           auto label_j = ghost_labels(j);
           if (label_j == min_label)
@@ -571,9 +575,9 @@ void communicateMergePairs(MPI_Comm comm, ExecutionSpace const &space,
   Kokkos::Profiling::ScopedRegion guard(prefix);
   prefix += "::";
 
-  std::vector<int> counts;
-  std::vector<int> offsets;
-  computeCountsAndOffsets(comm, (int)local_merge_pairs.size(), counts, offsets);
+  std::vector<std::uint64_t> counts;
+  std::vector<std::uint64_t> offsets;
+  computeCountsAndOffsets(comm, local_merge_pairs.size(), counts, offsets);
 
   int comm_rank;
   MPI_Comm_rank(comm, &comm_rank);
@@ -581,10 +585,15 @@ void communicateMergePairs(MPI_Comm comm, ExecutionSpace const &space,
   auto global_n = offsets.back();
   auto slice = Kokkos::make_pair(offsets[comm_rank], offsets[comm_rank + 1]);
 
-  // Scale counts and offsets by sizeof(pair) as we send in MPI_BYTE
+  // MPI_Allgatherv uses int counts and displacements. Keep the point counts
+  // and offsets wide until converting the byte layout for this call.
   auto const sc = sizeof(typename Pairs::value_type);
-  std::for_each(counts.begin(), counts.end(), [sc](auto &x) { x *= sc; });
-  std::for_each(offsets.begin(), offsets.end(), [sc](auto &x) { x *= sc; });
+  std::vector<int> byte_counts(counts.size());
+  std::vector<int> byte_offsets(offsets.size());
+  std::transform(counts.begin(), counts.end(), byte_counts.begin(),
+                 [sc](auto x) { return static_cast<int>(x * sc); });
+  std::transform(offsets.begin(), offsets.end(), byte_offsets.begin(),
+                 [sc](auto x) { return static_cast<int>(x * sc); });
 
   Kokkos::resize(Kokkos::view_alloc(space, Kokkos::WithoutInitializing),
                  global_merge_pairs, global_n);
@@ -595,8 +604,8 @@ void communicateMergePairs(MPI_Comm comm, ExecutionSpace const &space,
   space.fence(prefix + " (fill on device done before MPI_Allgatherv)");
 
   MPI_Allgatherv(MPI_IN_PLACE, 0, MPI_DATATYPE_NULL,
-                 static_cast<void *>(global_merge_pairs.data()), counts.data(),
-                 offsets.data(), MPI_BYTE, comm);
+                 static_cast<void *>(global_merge_pairs.data()),
+                 byte_counts.data(), byte_offsets.data(), MPI_BYTE, comm);
 #else
   Kokkos::DefaultHostExecutionSpace host_exec;
   auto global_merge_pairs_host = Kokkos::create_mirror_view(
@@ -609,7 +618,7 @@ void communicateMergePairs(MPI_Comm comm, ExecutionSpace const &space,
 
   MPI_Allgatherv(MPI_IN_PLACE, 0, MPI_DATATYPE_NULL,
                  static_cast<void *>(global_merge_pairs_host.data()),
-                 counts.data(), offsets.data(), MPI_BYTE, comm);
+                 byte_counts.data(), byte_offsets.data(), MPI_BYTE, comm);
 
   Kokkos::deep_copy(space, global_merge_pairs, global_merge_pairs_host);
   space.fence(prefix + " (host staging buffer must outlive the copy)");
