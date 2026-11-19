@@ -81,3 +81,37 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(do_posts_and_waits, DeviceType,
   Helper<DeviceType>::checkDoPostsAndWaits(comm, ranks, exports_unmanaged,
                                            imports_ref);
 }
+
+BOOST_AUTO_TEST_CASE_TEMPLATE(large_batched_counts, DeviceType,
+                              ARBORX_DEVICE_TYPES)
+{
+  using ExecutionSpace = typename DeviceType::execution_space;
+
+  int comm_size;
+  MPI_Comm_size(MPI_COMM_WORLD, &comm_size);
+  int comm_rank;
+  MPI_Comm_rank(MPI_COMM_WORLD, &comm_rank);
+
+  Kokkos::View<int *, DeviceType> ranks("Testing::large_ranks", 2);
+  auto ranks_host = Kokkos::create_mirror_view(ranks);
+  ranks_host(0) = comm_rank;
+  ranks_host(1) = (comm_rank + 1) % comm_size;
+  Kokkos::deep_copy(ranks, ranks_host);
+
+  // Total may exceeed 32 bit, but no individual send does.
+  Kokkos::View<std::uint64_t *, DeviceType> offsets("Testing::large_offsets",
+                                                    3);
+  auto offsets_host = Kokkos::create_mirror_view(offsets);
+  std::uint64_t const count = comm_size > 1 ? std::uint64_t{INT32_MAX} + 3
+                                            : std::uint64_t{INT32_MAX} - 1;
+  offsets_host(0) = 0;
+  offsets_host(1) = count / 2;
+  offsets_host(2) = count;
+  Kokkos::deep_copy(offsets, offsets_host);
+
+  ArborX::Details::Distributor<DeviceType> distributor(MPI_COMM_WORLD);
+  BOOST_TEST(distributor.createFromSends(ExecutionSpace{}, ranks, offsets) ==
+             count);
+  BOOST_TEST(distributor.getTotalSendLength() == count);
+  BOOST_TEST(distributor.getTotalReceiveLength() == count);
+}

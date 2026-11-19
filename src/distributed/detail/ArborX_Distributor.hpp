@@ -22,32 +22,39 @@
 #include <Kokkos_Core.hpp>
 #include <Kokkos_Profiling_ScopedRegion.hpp>
 
+#include <algorithm>
+#include <limits>
 #include <numeric> // iota
 #include <vector>
 
 #include <mpi.h>
 
-namespace ArborX
-{
-namespace Details
+namespace ArborX::Details
 {
 
 // Assuming that batched_ranks might contain elements multiply, but duplicates
 // are not separated by other elements, return the unique elements in that array
 // with the corresponding element counts and displacement (offsets).
-template <typename ExecutionSpace, typename InputView>
-static void
-determineBufferLayout(ExecutionSpace const &space, InputView batched_ranks,
-                      InputView batched_offsets, std::vector<int> &unique_ranks,
-                      std::vector<int> &offsets)
+template <typename ExecutionSpace, typename BatchedRanks,
+          typename BatchedOffsets>
+static void determineBufferLayout(ExecutionSpace const &space,
+                                  BatchedRanks batched_ranks,
+                                  BatchedOffsets batched_offsets,
+                                  std::vector<int> &unique_ranks,
+                                  std::vector<std::uint64_t> &offsets)
 {
   Kokkos::Profiling::ScopedRegion guard(
       "ArborX::Distributor::determineBufferLayout");
 
+  static_assert(
+      std::is_integral_v<typename BatchedRanks::non_const_value_type>);
+  static_assert(
+      std::is_integral_v<typename BatchedOffsets::non_const_value_type>);
+  ARBORX_ASSERT(batched_ranks.size() + 1 == batched_offsets.size());
   ARBORX_ASSERT(unique_ranks.empty());
   ARBORX_ASSERT(offsets.empty());
-  ARBORX_ASSERT(batched_ranks.size() + 1 == batched_offsets.size());
-  static_assert(std::is_same_v<typename InputView::non_const_value_type, int>);
+
+  using MemorySpace = typename BatchedRanks::memory_space;
 
   // In case all the batches are empty, return an empty list of unique_ranks and
   // counts, but still have one element in offsets. This is conforming with
@@ -55,33 +62,30 @@ determineBufferLayout(ExecutionSpace const &space, InputView batched_ranks,
   // empty batches and calling sortAndDetermeineBufferLayout.
   offsets.push_back(0);
 
-  auto const n_batched_ranks = batched_ranks.size();
-  if (n_batched_ranks == 0 ||
-      KokkosExt::lastElement(space, batched_offsets) == 0)
+  std::uint64_t const n_batched_ranks = batched_ranks.size();
+  if (n_batched_ranks == 0)
     return;
-
-  using DeviceType = typename InputView::traits::device_type;
 
   // Find the indices in batched_ranks for which the rank changes and store
   // these ranks and the corresponding offsets in a new container that we can be
   // sure to be large enough.
-  Kokkos::View<int *, DeviceType> compact_offsets(
+  Kokkos::View<std::uint64_t *, MemorySpace> compact_offsets(
       Kokkos::view_alloc(space, Kokkos::WithoutInitializing,
                          batched_offsets.label()),
       batched_offsets.size());
-  Kokkos::View<int *, DeviceType> compact_ranks(
+  Kokkos::View<int *, MemorySpace> compact_ranks(
       Kokkos::view_alloc(space, Kokkos::WithoutInitializing,
                          batched_ranks.label()),
-      batched_ranks.size());
+      n_batched_ranks);
 
   // Note that we never touch the first element of compact_offsets below.
   // Consequently, it is uninitialized.
   int n_unique_ranks;
   Kokkos::parallel_scan(
       "ArborX::Distributor::compact_offsets_and_ranks",
-      Kokkos::RangePolicy(space, 0, n_batched_ranks),
-      KOKKOS_LAMBDA(unsigned int i, int &update, bool last_pass) {
-        if (i == batched_ranks.size() - 1 ||
+      Kokkos::RangePolicy(space, (std::uint64_t)0, n_batched_ranks),
+      KOKKOS_LAMBDA(std::uint64_t i, int &update, bool last_pass) {
+        if (i + 1 == n_batched_ranks ||
             batched_ranks(i + 1) != batched_ranks(i))
         {
           if (last_pass)
@@ -96,10 +100,10 @@ determineBufferLayout(ExecutionSpace const &space, InputView batched_ranks,
 
   // Now create subviews containing the elements we actually need, copy
   // everything to the CPU and fill the output variables.
-  auto restricted_offsets = InputView(
-      compact_offsets, std::make_pair(1, static_cast<int>(n_unique_ranks + 1)));
-  auto restricted_unique_ranks = InputView(
-      compact_ranks, std::make_pair(0, static_cast<int>(n_unique_ranks)));
+  auto restricted_offsets =
+      Kokkos::subview(compact_offsets, std::make_pair(1, n_unique_ranks + 1));
+  auto restricted_unique_ranks =
+      Kokkos::subview(compact_ranks, std::make_pair(0, n_unique_ranks));
 
   auto const unique_ranks_host = Kokkos::create_mirror_view(
       Kokkos::view_alloc(Kokkos::WithoutInitializing, Kokkos::HostSpace()),
@@ -110,12 +114,12 @@ determineBufferLayout(ExecutionSpace const &space, InputView batched_ranks,
       restricted_offsets);
   Kokkos::deep_copy(space, offsets_host, restricted_offsets);
   space.fence();
+
   unique_ranks.reserve(n_unique_ranks);
   offsets.reserve(n_unique_ranks + 1);
-
   for (int i = 0; i < n_unique_ranks; ++i)
   {
-    int const count =
+    auto const count =
         i == 0 ? offsets_host(0) : offsets_host(i) - offsets_host(i - 1);
     if (count > 0)
     {
@@ -128,61 +132,59 @@ determineBufferLayout(ExecutionSpace const &space, InputView batched_ranks,
 // Computes the array of indices that sort the input array (in reverse order)
 // but also returns the sorted unique elements in that array with the
 // corresponding element counts and displacement (offsets)
-template <typename ExecutionSpace, typename InputView, typename OutputView>
+template <typename ExecutionSpace, typename Ranks, typename Permute>
 static void sortAndDetermineBufferLayout(ExecutionSpace const &space,
-                                         InputView ranks,
-                                         OutputView permutation_indices,
+                                         Ranks ranks, Permute permute,
                                          std::vector<int> &unique_ranks,
-                                         std::vector<int> &offsets)
+                                         std::vector<std::uint64_t> &offsets)
 {
   Kokkos::Profiling::ScopedRegion guard(
       "ArborX::Distributor::sortAndDetermineBufferLayout");
 
+  static_assert(std::is_same_v<typename Ranks::non_const_value_type, int>);
+  static_assert(std::is_same_v<typename Permute::value_type, std::uint64_t>);
   ARBORX_ASSERT(unique_ranks.empty());
   ARBORX_ASSERT(offsets.empty());
-  ARBORX_ASSERT(permutation_indices.extent_int(0) == ranks.extent_int(0));
-  static_assert(std::is_same_v<typename InputView::non_const_value_type, int>);
-  static_assert(std::is_same_v<typename OutputView::value_type, int>);
+  ARBORX_ASSERT(permute.extent(0) == ranks.extent(0));
 
   offsets.push_back(0);
 
-  auto const n = ranks.extent_int(0);
+  std::uint64_t const n = ranks.extent(0);
   if (n == 0)
     return;
 
   // this implements a "sort" which is O(N * R) where (R) is the total number of
   // unique destination ranks. it performs better than other algorithms in the
   // case when (R) is small, but results may vary
-  using DeviceType = typename InputView::traits::device_type;
+  using MemorySpace = typename Ranks::memory_space;
 
-  Kokkos::View<int *, DeviceType> device_ranks_duplicate(
+  Kokkos::View<int *, MemorySpace> device_ranks_duplicate(
       Kokkos::view_alloc(space, Kokkos::WithoutInitializing, ranks.label()),
       ranks.size());
   Kokkos::deep_copy(space, device_ranks_duplicate, ranks);
-  auto device_permutation_indices = Kokkos::create_mirror_view(
-      Kokkos::view_alloc(space, Kokkos::WithoutInitializing,
-                         typename DeviceType::memory_space{}),
-      permutation_indices);
-  int offset = 0;
+  auto device_permute = Kokkos::create_mirror_view(
+      Kokkos::view_alloc(space, Kokkos::WithoutInitializing, MemorySpace{}),
+      permute);
+  std::uint64_t offset = 0;
   while (true)
   {
-    int const largest_rank =
+    auto const largest_rank =
         KokkosExt::max_reduce(space, device_ranks_duplicate);
     if (largest_rank == -1)
       break;
     unique_ranks.push_back(largest_rank);
-    int result = 0;
+    std::uint64_t result = 0;
     Kokkos::parallel_scan(
         "ArborX::Distributor::process_biggest_rank_items",
-        Kokkos::RangePolicy(space, 0, n),
-        KOKKOS_LAMBDA(int i, int &update, bool last_pass) {
+        Kokkos::RangePolicy(space, (std::uint64_t)0, n),
+        KOKKOS_LAMBDA(std::uint64_t i, std::uint64_t & update, bool last_pass) {
           bool const is_largest_rank =
               (device_ranks_duplicate(i) == largest_rank);
           if (is_largest_rank)
           {
             if (last_pass)
             {
-              device_permutation_indices(i) = update + offset;
+              device_permute(i) = update + offset;
               device_ranks_duplicate(i) = -1;
             }
             ++update;
@@ -192,8 +194,8 @@ static void sortAndDetermineBufferLayout(ExecutionSpace const &space,
     offset += result;
     offsets.push_back(offset);
   }
-  Kokkos::deep_copy(space, permutation_indices, device_permutation_indices);
-  ARBORX_ASSERT(offsets.back() == static_cast<int>(ranks.size()));
+  Kokkos::deep_copy(space, permute, device_permute);
+  ARBORX_ASSERT(offsets.back() == static_cast<std::uint64_t>(ranks.size()));
 }
 
 template <typename DeviceType>
@@ -207,41 +209,44 @@ public:
                  0}
   {}
 
-  template <typename ExecutionSpace, typename View>
-  size_t createFromSends(ExecutionSpace const &space,
-                         View const &batched_destination_ranks,
-                         View const &batch_offsets)
+  template <typename ExecutionSpace, typename BatchedRanks,
+            typename BatchedOffsets>
+  auto createFromSends(ExecutionSpace const &space,
+                       BatchedRanks const &batched_destination_ranks,
+                       BatchedOffsets const &batch_offsets)
   {
     Kokkos::Profiling::ScopedRegion guard(
         "ArborX::Distributor::createFromSends(batched)");
 
-    static_assert(View::rank() == 1);
+    static_assert(BatchedRanks::rank() == 1);
+    static_assert(BatchedOffsets::rank() == 1);
     static_assert(
-        std::is_same<typename View::non_const_value_type, int>::value);
+        std::is_integral_v<typename BatchedRanks::non_const_value_type>);
+    static_assert(
+        std::is_integral_v<typename BatchedOffsets::non_const_value_type>);
 
     // The next two function calls are the only difference to the other
     // overload.
     // Note that we don't resize _permute here since we are assuming that no
     // reordering is necessary.
-    ARBORX_ASSERT(_permute.extent_int(0) == 0);
+    ARBORX_ASSERT(_permute.extent(0) == 0);
     determineBufferLayout(space, batched_destination_ranks, batch_offsets,
                           _destinations, _dest_offsets);
 
     return preparePointToPointCommunication();
   }
 
-  template <typename ExecutionSpace, typename View>
-  size_t createFromSends(ExecutionSpace const &space,
-                         View const &destination_ranks)
+  template <typename ExecutionSpace, typename Ranks>
+  auto createFromSends(ExecutionSpace const &space,
+                       Ranks const &destination_ranks)
   {
     Kokkos::Profiling::ScopedRegion guard(
         "ArborX::Distributor::createFromSends");
 
-    static_assert(View::rank() == 1);
-    static_assert(
-        std::is_same<typename View::non_const_value_type, int>::value);
+    static_assert(Ranks::rank() == 1);
+    static_assert(std::is_same_v<typename Ranks::non_const_value_type, int>);
 
-    auto const n = destination_ranks.extent_int(0);
+    std::uint64_t const n = destination_ranks.extent(0);
 
     if (n == 0)
     {
@@ -359,7 +364,8 @@ public:
     {
       // Only copy the parts of the exports that we need to send remotely
       for (auto interval :
-           {std::make_pair(0, _dest_offsets[same_rank_destination]),
+           {std::make_pair((std::uint64_t)0,
+                           _dest_offsets[same_rank_destination]),
             std::make_pair(_dest_offsets[same_rank_destination + 1],
                            _dest_offsets.back())})
         Kokkos::deep_copy(space, Kokkos::subview(exports_comm, interval),
@@ -378,18 +384,28 @@ public:
 
     int const indegrees = _sources.size();
     int const outdegrees = _destinations.size();
+    constexpr int max_chunk_size = std::numeric_limits<int>::max();
     std::vector<MPI_Request> requests;
     requests.reserve(outdegrees + indegrees);
     for (int i = 0; i < indegrees; ++i)
     {
       if (_sources[i] != comm_rank)
       {
-        auto const receive_buffer_ptr = imports_comm.data() + _src_offsets[i];
-        auto const message_size =
+        auto *receive_buffer_ptr = reinterpret_cast<unsigned char *>(
+            imports_comm.data() + _src_offsets[i]);
+        std::uint64_t message_size =
             (_src_offsets[i + 1] - _src_offsets[i]) * sizeof(ValueType);
-        requests.emplace_back();
-        MPI_Irecv(receive_buffer_ptr, message_size, MPI_BYTE, _sources[i], 123,
-                  _comm, &requests.back());
+        while (message_size > 0)
+        {
+          int const chunk_size = message_size > max_chunk_size
+                                     ? max_chunk_size
+                                     : static_cast<int>(message_size);
+          requests.emplace_back();
+          MPI_Irecv(receive_buffer_ptr, chunk_size, MPI_BYTE, _sources[i], 123,
+                    _comm, &requests.back());
+          receive_buffer_ptr += chunk_size;
+          message_size -= chunk_size;
+        }
       }
     }
 
@@ -401,14 +417,26 @@ public:
     {
       if (_destinations[i] != comm_rank)
       {
-        requests.emplace_back();
-        MPI_Isend(exports_comm.data() + _dest_offsets[i],
-                  (_dest_offsets[i + 1] - _dest_offsets[i]) * sizeof(ValueType),
-                  MPI_BYTE, _destinations[i], 123, _comm, &requests.back());
+        auto *send_buffer_ptr = reinterpret_cast<unsigned char *>(
+            exports_comm.data() + _dest_offsets[i]);
+        std::uint64_t message_size =
+            (_dest_offsets[i + 1] - _dest_offsets[i]) * sizeof(ValueType);
+        while (message_size > 0)
+        {
+          int const chunk_size = message_size > max_chunk_size
+                                     ? max_chunk_size
+                                     : static_cast<int>(message_size);
+          requests.emplace_back();
+          MPI_Isend(send_buffer_ptr, chunk_size, MPI_BYTE, _destinations[i],
+                    123, _comm, &requests.back());
+          send_buffer_ptr += chunk_size;
+          message_size -= chunk_size;
+        }
       }
     }
     if (!requests.empty())
-      MPI_Waitall(requests.size(), requests.data(), MPI_STATUSES_IGNORE);
+      MPI_Waitall(static_cast<int>(requests.size()), requests.data(),
+                  MPI_STATUSES_IGNORE);
 
     if (same_rank_destination != -1)
     {
@@ -429,9 +457,10 @@ public:
 #ifndef ARBORX_ENABLE_GPU_AWARE_MPI
     if (same_rank_destination != -1)
     {
-      for (auto interval : {std::make_pair(0, _src_offsets[same_rank_source]),
-                            std::make_pair(_src_offsets[same_rank_source + 1],
-                                           _src_offsets.back())})
+      for (auto interval :
+           {std::make_pair((std::uint64_t)0, _src_offsets[same_rank_source]),
+            std::make_pair(_src_offsets[same_rank_source + 1],
+                           _src_offsets.back())})
         Kokkos::deep_copy(space, Kokkos::subview(imports, interval),
                           Kokkos::subview(imports_comm, interval));
     }
@@ -444,8 +473,8 @@ public:
         "outlive the copy)");
 #endif
   }
-  size_t getTotalReceiveLength() const { return _src_offsets.back(); }
-  size_t getTotalSendLength() const { return _dest_offsets.back(); }
+  std::uint64_t getTotalReceiveLength() const { return _src_offsets.back(); }
+  std::uint64_t getTotalSendLength() const { return _dest_offsets.back(); }
 
 private:
   size_t preparePointToPointCommunication()
@@ -465,15 +494,18 @@ private:
     int comm_size;
     MPI_Comm_size(_comm, &comm_size);
 
-    std::vector<int> src_counts_dense(comm_size);
+    std::vector<std::uint64_t> src_counts_dense(comm_size);
     int const dest_size = _destinations.size();
     for (int i = 0; i < dest_size; ++i)
     {
       src_counts_dense[_destinations[i]] =
           _dest_offsets[i + 1] - _dest_offsets[i];
     }
+    // clang-tidy produces a false positive:
+    //   buffer type 'unsigned long' does not match MPI datatype 'MPI_UINT64_T'
+    // NOLINTNEXTLINE(mpi-type-mismatch)
     MPI_Alltoall(MPI_IN_PLACE, 0, MPI_DATATYPE_NULL, src_counts_dense.data(), 1,
-                 MPI_INT, _comm);
+                 MPI_UINT64_T, _comm);
 
     _src_offsets.push_back(0);
     for (int i = 0; i < comm_size; ++i)
@@ -490,7 +522,15 @@ private:
 
     std::vector<int> dest_weights(outdegree);
     for (int i = 0; i < outdegree; ++i)
+    {
+      // MPI_Dist_graph_create requires the weights to be of type int. Check
+      // that the difference between two consecutive offsets fits in an int.
+      // This is a reasonable assumption since the number of items sent to a
+      // single rank is unlikely to exceed 2 billion.
+      ARBORX_ASSERT(_dest_offsets[i + 1] - _dest_offsets[i] <
+                    std::numeric_limits<int>::max());
       dest_weights[i] = _dest_offsets[i + 1] - _dest_offsets[i];
+    }
 
     MPI_Comm graph_comm;
     MPI_Dist_graph_create(_comm, (outdegree ? 1 : 0), &comm_rank, &outdegree,
@@ -540,14 +580,13 @@ private:
   }
 
   MPI_Comm _comm;
-  Kokkos::View<int *, DeviceType> _permute;
-  std::vector<int> _dest_offsets;
-  std::vector<int> _src_offsets;
+  Kokkos::View<std::uint64_t *, DeviceType> _permute;
+  std::vector<std::uint64_t> _dest_offsets;
+  std::vector<std::uint64_t> _src_offsets;
   std::vector<int> _sources;
   std::vector<int> _destinations;
 };
 
-} // namespace Details
-} // namespace ArborX
+} // namespace ArborX::Details
 
 #endif

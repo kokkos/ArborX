@@ -49,20 +49,20 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(count_results, DeviceType, ARBORX_DEVICE_TYPES)
 }
 
 void checkBufferLayout(std::vector<int> const &ranks,
-                       std::vector<int> const &permute_ref,
+                       std::vector<std::uint64_t> const &permute_ref,
                        std::vector<int> const &unique_ref,
-                       std::vector<int> const &offsets_ref)
+                       std::vector<std::uint64_t> const &offsets_ref)
 {
-  std::vector<int> permute(ranks.size());
+  std::vector<std::uint64_t> permute(ranks.size());
   std::vector<int> unique;
-  std::vector<int> offsets;
+  std::vector<std::uint64_t> offsets;
   Kokkos::DefaultHostExecutionSpace space;
   ArborX::Details::sortAndDetermineBufferLayout(
       space,
       Kokkos::View<int const *, Kokkos::HostSpace,
                    Kokkos::MemoryTraits<Kokkos::Unmanaged>>(ranks.data(),
                                                             ranks.size()),
-      Kokkos::View<int *, Kokkos::HostSpace,
+      Kokkos::View<std::uint64_t *, Kokkos::HostSpace,
                    Kokkos::MemoryTraits<Kokkos::Unmanaged>>(permute.data(),
                                                             permute.size()),
       unique, offsets);
