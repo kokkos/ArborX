@@ -19,6 +19,7 @@
 #include <detail/ArborX_DistributedTreeSpatial.hpp>
 #include <detail/ArborX_DistributedTreeUtils.hpp>
 #include <detail/ArborX_PairValueIndex.hpp>
+#include <kokkos_ext/ArborX_KokkosExtFenceOnExit.hpp>
 #include <kokkos_ext/ArborX_KokkosExtStdAlgorithms.hpp>
 
 #include <Kokkos_Core.hpp>
@@ -225,8 +226,10 @@ DistributedTreeBase<BottomTree>::DistributedTreeBase(
                 static_cast<void *>(volumes_and_sizes_host.data()),
                 sizeof(PairVolumeSize), MPI_BYTE, getComm());
 
+  // Host staging buffer must outlive the copy
+  Details::KokkosExt::FenceOnExit fence_volumes(prefix + "::fence_volumes_copy",
+                                                space);
   Kokkos::deep_copy(space, volumes_and_sizes, volumes_and_sizes_host);
-  space.fence(prefix + "(host staging buffer must outlive the copy)");
 #endif
 
   // Filter out empty ranks
