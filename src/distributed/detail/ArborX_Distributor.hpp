@@ -22,6 +22,8 @@
 #include <Kokkos_Core.hpp>
 #include <Kokkos_Profiling_ScopedRegion.hpp>
 
+#include <algorithm>
+#include <limits>
 #include <numeric> // iota
 #include <vector>
 
@@ -382,18 +384,28 @@ public:
 
     int const indegrees = _sources.size();
     int const outdegrees = _destinations.size();
+    constexpr int max_chunk_size = std::numeric_limits<int>::max();
     std::vector<MPI_Request> requests;
     requests.reserve(outdegrees + indegrees);
     for (int i = 0; i < indegrees; ++i)
     {
       if (_sources[i] != comm_rank)
       {
-        auto const receive_buffer_ptr = imports_comm.data() + _src_offsets[i];
-        auto const message_size =
+        auto *receive_buffer_ptr = reinterpret_cast<unsigned char *>(
+            imports_comm.data() + _src_offsets[i]);
+        std::uint64_t message_size =
             (_src_offsets[i + 1] - _src_offsets[i]) * sizeof(ValueType);
-        requests.emplace_back();
-        MPI_Irecv(receive_buffer_ptr, message_size, MPI_BYTE, _sources[i], 123,
-                  _comm, &requests.back());
+        while (message_size > 0)
+        {
+          int const chunk_size = message_size > max_chunk_size
+                                     ? max_chunk_size
+                                     : static_cast<int>(message_size);
+          requests.emplace_back();
+          MPI_Irecv(receive_buffer_ptr, chunk_size, MPI_BYTE, _sources[i], 123,
+                    _comm, &requests.back());
+          receive_buffer_ptr += chunk_size;
+          message_size -= chunk_size;
+        }
       }
     }
 
@@ -405,14 +417,26 @@ public:
     {
       if (_destinations[i] != comm_rank)
       {
-        requests.emplace_back();
-        MPI_Isend(exports_comm.data() + _dest_offsets[i],
-                  (_dest_offsets[i + 1] - _dest_offsets[i]) * sizeof(ValueType),
-                  MPI_BYTE, _destinations[i], 123, _comm, &requests.back());
+        auto *send_buffer_ptr = reinterpret_cast<unsigned char *>(
+            exports_comm.data() + _dest_offsets[i]);
+        std::uint64_t message_size =
+            (_dest_offsets[i + 1] - _dest_offsets[i]) * sizeof(ValueType);
+        while (message_size > 0)
+        {
+          int const chunk_size = message_size > max_chunk_size
+                                     ? max_chunk_size
+                                     : static_cast<int>(message_size);
+          requests.emplace_back();
+          MPI_Isend(send_buffer_ptr, chunk_size, MPI_BYTE, _destinations[i],
+                    123, _comm, &requests.back());
+          send_buffer_ptr += chunk_size;
+          message_size -= chunk_size;
+        }
       }
     }
     if (!requests.empty())
-      MPI_Waitall(requests.size(), requests.data(), MPI_STATUSES_IGNORE);
+      MPI_Waitall(static_cast<int>(requests.size()), requests.data(),
+                  MPI_STATUSES_IGNORE);
 
     if (same_rank_destination != -1)
     {
