@@ -227,7 +227,8 @@ DistributedTreeBase<BottomTree>::DistributedTreeBase(
                 sizeof(PairVolumeSize), MPI_BYTE, getComm());
 
   // Host staging buffer must outlive the copy
-  KokkosExt::FenceOnExit fence_volumes(prefix + "::fence_volumes_copy", space);
+  Details::KokkosExt::FenceOnExit fence_volumes(prefix + "::fence_volumes_copy",
+                                                space);
   Kokkos::deep_copy(space, volumes_and_sizes, volumes_and_sizes_host);
 #endif
 
