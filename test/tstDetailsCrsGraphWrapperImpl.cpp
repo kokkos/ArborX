@@ -19,6 +19,8 @@
 
 #include <boost/test/unit_test.hpp>
 
+#include <cstdint>
+
 #define BOOST_TEST_MODULE DetailsCrsGraphWrapperImpl
 
 namespace tt = boost::test_tools;
@@ -46,7 +48,8 @@ struct Test1
   }
 };
 
-BOOST_AUTO_TEST_CASE_TEMPLATE(query_impl, DeviceType, ARBORX_DEVICE_TYPES)
+template <typename DeviceType, typename OffsetType>
+void testQueryImpl()
 {
   using ExecutionSpace = typename DeviceType::execution_space;
 
@@ -54,7 +57,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(query_impl, DeviceType, ARBORX_DEVICE_TYPES)
 
   using Point = ArborX::Point<3>;
 
-  Kokkos::View<int *, DeviceType> offset("offset", 0);
+  Kokkos::View<OffsetType *, DeviceType> offset("offset", 0);
   Kokkos::View<int *, DeviceType> indices("indices", 0);
 
   int const n = 10;
@@ -76,7 +79,8 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(query_impl, DeviceType, ARBORX_DEVICE_TYPES)
   KokkosExt::iota(space, permute);
 
   KokkosExt::exclusive_scan(space, offset, offset, 0);
-  Kokkos::realloc(indices, KokkosExt::lastElement(space, offset));
+  Kokkos::realloc(
+      indices, static_cast<std::size_t>(KokkosExt::lastElement(space, offset)));
   ArborX::Details::CrsGraphWrapperImpl::queryImpl(
       space, Test1{}, predicates, ArborX::Details::DefaultCallback{}, indices,
       offset, permute, ArborX::Details::BufferStatus::PreallocationHard);
@@ -87,15 +91,22 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(query_impl, DeviceType, ARBORX_DEVICE_TYPES)
       Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace{}, offset);
 
   std::vector<int> indices_ref;
-  std::vector<int> offset_ref;
+  std::vector<OffsetType> offset_ref;
   offset_ref.push_back(0);
   for (int i = 0; i < n; ++i)
   {
     for (int j = 0; j < i; ++j)
       indices_ref.push_back(j);
-    offset_ref.push_back(indices_ref.size());
+    offset_ref.push_back(static_cast<OffsetType>(indices_ref.size()));
   }
 
   BOOST_TEST(offset_host == offset_ref, tt::per_element());
   BOOST_TEST(indices_host == indices_ref, tt::per_element());
+}
+
+BOOST_AUTO_TEST_CASE_TEMPLATE(query_impl, DeviceType, ARBORX_DEVICE_TYPES)
+{
+  testQueryImpl<DeviceType, int>();
+  testQueryImpl<DeviceType, unsigned int>();
+  testQueryImpl<DeviceType, std::uint64_t>();
 }
