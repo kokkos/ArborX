@@ -87,26 +87,40 @@ public:
              Experimental::TraversalPolicy const &policy =
                  Experimental::TraversalPolicy()) const;
 
-  template <typename ExecutionSpace, typename UserPredicates,
-            typename CallbackOrView, typename View, typename... Args>
-    requires(Kokkos::is_view_v<std::decay_t<View>>)
+  template <typename ExecutionSpace, typename UserPredicates, typename Callback,
+            typename View, typename Offsets>
+    requires(Kokkos::is_view_v<std::remove_cvref_t<View>> &&
+             Kokkos::is_view_v<std::remove_cvref_t<Offsets>>)
   void query(ExecutionSpace const &space, UserPredicates const &user_predicates,
-             CallbackOrView &&callback_or_view, View &&view,
-             Args &&...args) const
+             Callback const &callback, View &view, Offsets &offsets,
+             Experimental::TraversalPolicy const &policy =
+                 Experimental::TraversalPolicy()) const
   {
     Kokkos::Profiling::ScopedRegion guard("ArborX::BVH::query_crs");
 
-    Details::CrsGraphWrapperImpl::
-        check_valid_callback_if_first_argument_is_not_a_view<value_type>(
-            callback_or_view, user_predicates, view);
+    if constexpr (!Details::is_tagged_post_callback<Callback>::value)
+      Details::check_valid_callback<value_type>(callback, user_predicates,
+                                                view);
 
     using Predicates = Details::AccessValues<UserPredicates>;
     using Tag = typename Predicates::value_type::Tag;
 
     Details::CrsGraphWrapperImpl::queryDispatch(
-        Tag{}, *this, space, Predicates{user_predicates},
-        std::forward<CallbackOrView>(callback_or_view),
-        std::forward<View>(view), std::forward<Args>(args)...);
+        Tag{}, *this, space, Predicates{user_predicates}, callback, view,
+        offsets, policy);
+  }
+
+  template <typename ExecutionSpace, typename UserPredicates, typename View,
+            typename Offsets>
+    requires(Kokkos::is_view_v<std::remove_cvref_t<View>> &&
+             Kokkos::is_view_v<std::remove_cvref_t<Offsets>>)
+  void query(ExecutionSpace const &space, UserPredicates const &user_predicates,
+             View &view, Offsets &offsets,
+             Experimental::TraversalPolicy const &policy =
+                 Experimental::TraversalPolicy()) const
+  {
+    query(space, user_predicates, Details::DefaultCallback{}, view, offsets,
+          policy);
   }
 
   template <typename Predicate, typename Callback>
