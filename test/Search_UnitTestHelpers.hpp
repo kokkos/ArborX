@@ -112,6 +112,8 @@ auto make(ExecutionSpace const &exec_space, std::vector<Geometry> const &g)
   for (int i = 0; i < n; ++i)
     geometries_host(i) = g[i];
   Kokkos::deep_copy(exec_space, geometries, geometries_host);
+  exec_space.fence(
+      "Testing::make (host geometry buffer must outlive the copy)");
   return Tree(exec_space, geometries);
 }
 
@@ -174,6 +176,8 @@ auto makeIntersectsQueries(
   for (int i = 0; i < n; ++i)
     queries_host(i) = ArborX::intersects(geometries[i]);
   Kokkos::deep_copy(exec_space, queries, queries_host);
+  exec_space.fence("Testing::makeIntersectsQueries (host query buffer must "
+                   "outlive the copy)");
   return queries;
 }
 
@@ -196,6 +200,8 @@ auto makeIntersectsWithAttachmentQueries(
     queries_host(i) =
         ArborX::attach(ArborX::intersects(geometries[i]), data[i]);
   Kokkos::deep_copy(exec_space, queries, queries_host);
+  exec_space.fence("Testing::makeIntersectsWithAttachmentQueries (host query "
+                   "buffer must outlive the copy)");
   return queries;
 }
 
@@ -217,6 +223,8 @@ auto makeNearestQueries(
     queries_host(i) =
         ArborX::nearest(geometries[i].first, geometries[i].second);
   Kokkos::deep_copy(exec_space, queries, queries_host);
+  exec_space.fence(
+      "Testing::makeNearestQueries (host query buffer must outlive the copy)");
   return queries;
 }
 
@@ -240,6 +248,8 @@ auto makeNearestWithAttachmentQueries(
     queries_host(i) = ArborX::attach(
         ArborX::nearest(points[i].first, points[i].second), data[i]);
   Kokkos::deep_copy(exec_space, queries, queries_host);
+  exec_space.fence("Testing::makeNearestWithAttachmentQueries (host query "
+                   "buffer must outlive the copy)");
   return queries;
 }
 

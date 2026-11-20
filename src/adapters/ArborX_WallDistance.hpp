@@ -173,6 +173,7 @@ void WallDistance<MemorySpace, DIM, Coordinate, ReplicateSides>::distance(
       points_host(i) = {x[0], x[1], x[2]};
   }
   Kokkos::deep_copy(space, points, points_host);
+  space.fence(prefix + " (host staging buffer must outlive the copy) ");
 
   Kokkos::Profiling::popRegion();
 
