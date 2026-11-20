@@ -16,6 +16,7 @@
 #include <detail/ArborX_DistributedTreeUtils.hpp>
 #include <detail/ArborX_HappyTreeFriends.hpp>
 #include <detail/ArborX_Predicates.hpp>
+#include <kokkos_ext/ArborX_KokkosExtArithmeticTraits.hpp>
 #include <kokkos_ext/ArborX_KokkosExtKernelStdAlgorithms.hpp>
 #include <kokkos_ext/ArborX_KokkosExtMinMaxReduce.hpp>
 #include <kokkos_ext/ArborX_KokkosExtStdAlgorithms.hpp>
@@ -111,7 +112,20 @@ void DistributedTreeImpl::phaseI(ExecutionSpace const &space, Tree const &tree,
       Kokkos::RangePolicy(space, 0, predicates.size()), KOKKOS_LAMBDA(int i) {
         auto const num_distances = offset(i + 1) - offset(i);
         if (num_distances == 0)
+        {
+          // For nearest neighbors requesting 0 neighbors, we have few options:
+          // 1) Set the farthest_distance to 0
+          //    This may still result in a few false positive intersections and
+          //    extra communication
+          // 2) Set it to some negative number and hope that it will produce
+          //    an invalid geometry so that it does not go to phase II
+          // 3) Do nothing here, and do predicate filtering
+          //    This would need a lot of book-keeping.
+          // So, opted for option 2 here.
+          farthest_distances(i) =
+              KokkosExt::ArithmeticTraits::finite_min<Coordinate>::value;
           return;
+        }
 
         auto const k = Kokkos::min(getK(predicates(i)), num_distances) - 1;
         auto *begin = distances.data() + offset(i);

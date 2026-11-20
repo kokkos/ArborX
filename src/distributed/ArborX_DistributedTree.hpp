@@ -115,7 +115,7 @@ private:
   BottomTree _bottom_tree; // local
   TopTree _top_tree;       // replicated
   size_type _top_tree_size{0};
-  // Top tree filters out ranks with no primitives, so there is a mistmatch in
+  // Top tree filters out ranks with no primitives, so there is a mismatch in
   // size and indexing of top tree leaves and rank sizes.
   Kokkos::View<size_type *, MemorySpace> _rank_sizes;
 };

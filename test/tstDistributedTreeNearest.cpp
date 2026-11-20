@@ -19,6 +19,7 @@
 #include <boost/test/unit_test.hpp>
 
 #include <iostream>
+#include <limits>
 #include <vector>
 
 #include "Search_UnitTestHelpers.hpp"
@@ -344,6 +345,40 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(unique_leaf_on_rank_0_nearest, DeviceType,
           {{{(float)comm_rank, (float)comm_rank, (float)comm_rank}}, comm_size},
       })),
       make_reference_solution<PairIndexRank>({{0, 0}}, {0, 1}));
+}
+
+BOOST_AUTO_TEST_CASE_TEMPLATE(zero_neighbors_nearest, DeviceType,
+                              ARBORX_DEVICE_TYPES)
+{
+  using ExecutionSpace = typename DeviceType::execution_space;
+  using Point = ArborX::Point<2>;
+
+  int comm_size;
+  MPI_Comm_size(MPI_COMM_WORLD, &comm_size);
+  int comm_rank;
+  MPI_Comm_rank(MPI_COMM_WORLD, &comm_rank);
+
+  Point point{static_cast<float>((comm_rank + 1) % comm_size), 0};
+  auto const tree = makeDistributedTree<DeviceType>(
+      MPI_COMM_WORLD, ExecutionSpace{}, std::vector<Point>{point});
+  Point query_point{static_cast<float>(comm_rank), 0};
+  auto const queries = makeNearestQueries<DeviceType, Point>(
+      {{query_point, 0}, {query_point, 1}});
+
+  Kokkos::View<float *, DeviceType> farthest_distances(
+      "Testing::farthest_distances", 2);
+  Kokkos::deep_copy(farthest_distances, -2.f);
+  ArborX::Details::DistributedTreeImpl::phaseI(ExecutionSpace{}, tree, queries,
+                                               farthest_distances);
+  auto const distances_host = Kokkos::create_mirror_view_and_copy(
+      Kokkos::HostSpace{}, farthest_distances);
+  BOOST_TEST(distances_host(0) == std::numeric_limits<float>::lowest());
+  BOOST_TEST(distances_host(1) == 0.f);
+
+  ARBORX_TEST_QUERY_TREE(
+      ExecutionSpace{}, tree, queries,
+      make_reference_solution<PairIndexRank>(
+          {{0, (comm_size + comm_rank - 1) % comm_size}}, {0, 0, 1}));
 }
 
 BOOST_AUTO_TEST_CASE_TEMPLATE(one_leaf_per_rank_nearest, DeviceType,
