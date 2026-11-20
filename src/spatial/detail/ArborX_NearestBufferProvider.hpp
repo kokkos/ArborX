@@ -25,9 +25,9 @@ struct NearestBufferProvider
 {
   static_assert(Kokkos::is_memory_space_v<MemorySpace>);
 
-  using PairIndexDistance = Kokkos::pair<int, Coordinate>;
+  using value_type = Kokkos::pair<int, Coordinate>;
 
-  Kokkos::View<PairIndexDistance *, MemorySpace> _buffer;
+  Kokkos::View<value_type *, MemorySpace> _buffer;
   Kokkos::View<int *, MemorySpace> _offset;
 
   NearestBufferProvider()

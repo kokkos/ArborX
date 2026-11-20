@@ -89,7 +89,9 @@ public:
 
   template <typename ExecutionSpace, typename UserPredicates,
             typename CallbackOrView, typename View, typename... Args>
-    requires(Kokkos::is_view_v<std::decay_t<View>>)
+    requires(
+        Kokkos::is_view_v<std::decay_t<View>> &&
+        !std::is_same_v<std::decay_t<ExecutionSpace>, Experimental::PerThread>)
   void query(ExecutionSpace const &space, UserPredicates const &user_predicates,
              CallbackOrView &&callback_or_view, View &&view,
              Args &&...args) const
@@ -115,10 +117,57 @@ public:
                              Callback const &callback) const
   {
     ArborX::Details::TreeTraversal<BoundingVolumeHierarchy,
-                                   /* Predicates Dummy */ std::true_type,
+                                   Kokkos::View<Predicate *, MemorySpace>,
                                    Callback, typename Predicate::Tag>
         tree_traversal(*this, callback);
-    tree_traversal(predicate);
+    if constexpr (std::is_same_v<typename Predicate::Tag,
+                                 Details::NearestPredicateTag>)
+    {
+      using Coordinate = decltype(std::declval<Predicate>().distance(
+          std::declval<indexable_type>()));
+      using PairIndexDistance = Kokkos::pair<int, Coordinate>;
+      auto const k = getK(predicate);
+      if (k == 1)
+      {
+        Kokkos::Array<PairIndexDistance, 1> buffer_storage;
+        Kokkos::View<PairIndexDistance *, MemorySpace, Kokkos::MemoryUnmanaged>
+            buffer(buffer_storage.data(), buffer_storage.size());
+        tree_traversal(predicate, buffer);
+        return;
+      }
+      if (k < 1)
+        return;
+      if (k <= 4)
+      {
+        Kokkos::Array<PairIndexDistance, 4> buffer_storage;
+        Kokkos::View<PairIndexDistance *, MemorySpace, Kokkos::MemoryUnmanaged>
+            buffer(buffer_storage.data(), buffer_storage.size());
+        tree_traversal(predicate, buffer);
+        return;
+      }
+      if (k <= 8)
+      {
+        Kokkos::Array<PairIndexDistance, 8> buffer_storage;
+        Kokkos::View<PairIndexDistance *, MemorySpace, Kokkos::MemoryUnmanaged>
+            buffer(buffer_storage.data(), buffer_storage.size());
+        tree_traversal(predicate, buffer);
+        return;
+      }
+      if (k <= 16)
+      {
+        Kokkos::Array<PairIndexDistance, 16> buffer_storage;
+        Kokkos::View<PairIndexDistance *, MemorySpace, Kokkos::MemoryUnmanaged>
+            buffer(buffer_storage.data(), buffer_storage.size());
+        tree_traversal(predicate, buffer);
+        return;
+      }
+      Kokkos::abort(
+          "ArborX::BVH::query: k must be <= 16 for PerThread nearest query");
+    }
+    else
+    {
+      tree_traversal(predicate);
+    }
   }
 
   KOKKOS_FUNCTION auto const &indexable_get() const

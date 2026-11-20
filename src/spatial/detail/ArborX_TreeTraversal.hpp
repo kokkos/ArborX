@@ -128,17 +128,23 @@ struct TreeTraversal<BVH, Predicates, Callback, NearestPredicateTag>
   Predicates _predicates;
   Callback _callback;
 
-  using Coordinate = decltype(std::declval<Predicates>()(0).distance(
-      HappyTreeFriends::getIndexable(_bvh, 0)));
-
-  NearestBufferProvider<MemorySpace, Coordinate> _buffer;
-
   template <typename ExecutionSpace>
   TreeTraversal(ExecutionSpace const &space, BVH const &bvh,
                 Predicates const &predicates, Callback const &callback)
       : _bvh{bvh}
       , _predicates{predicates}
       , _callback{callback}
+  {
+    runBatched(space);
+  }
+
+  KOKKOS_FUNCTION TreeTraversal(BVH const &bvh, Callback const &callback)
+      : _bvh{bvh}
+      , _callback{callback}
+  {}
+
+  template <typename ExecutionSpace>
+  void runBatched(ExecutionSpace const &space)
   {
     if (_bvh.empty())
     {
@@ -148,46 +154,47 @@ struct TreeTraversal<BVH, Predicates, Callback, NearestPredicateTag>
     {
       Kokkos::parallel_for(
           "ArborX::TreeTraversal::nearest::degenerated_one_leaf_tree",
-          Kokkos::RangePolicy<ExecutionSpace, OneLeafTree>(space, 0,
-                                                           predicates.size()),
-          *this);
+          Kokkos::RangePolicy<ExecutionSpace>(space, 0, _predicates.size()),
+          KOKKOS_CLASS_LAMBDA(int queryIndex) {
+            auto const &predicate = _predicates(queryIndex);
+
+            // NOTE thinking about making this a precondition
+            if (getK(predicate) < 1)
+              return;
+
+            _callback(predicate, HappyTreeFriends::getValue(_bvh, 0));
+          });
     }
     else
     {
-      _buffer.allocateBuffer(space, predicates);
+      using Coordinate = decltype(std::declval<Predicates>()(0).distance(
+          HappyTreeFriends::getIndexable(_bvh, 0)));
 
-      Kokkos::parallel_for("ArborX::TreeTraversal::nearest",
-                           Kokkos::RangePolicy(space, 0, predicates.size()),
-                           *this);
+      NearestBufferProvider<MemorySpace, Coordinate> buffer(space, _predicates);
+      Kokkos::parallel_for(
+          "ArborX::TreeTraversal::nearest",
+          Kokkos::RangePolicy<ExecutionSpace>(space, 0, _predicates.size()),
+          KOKKOS_CLASS_LAMBDA(int queryIndex) {
+            auto const &predicate = _predicates(queryIndex);
+            auto const k = getK(predicate);
+
+            // NOTE thinking about making this a precondition
+            if (k < 1)
+              return;
+
+            operator()(predicate, buffer(queryIndex));
+          });
     }
   }
 
-  struct OneLeafTree
-  {};
-
-  KOKKOS_FUNCTION void operator()(OneLeafTree, int queryIndex) const
+  template <typename Predicate, typename Buffer>
+  KOKKOS_FUNCTION void operator()(Predicate const &predicate,
+                                  Buffer const &buffer) const
   {
-    auto const &predicate = _predicates(queryIndex);
     auto const k = getK(predicate);
 
-    // NOTE thinking about making this a precondition
-    if (k < 1)
-      return;
-
-    _callback(predicate, HappyTreeFriends::getValue(_bvh, 0));
-  }
-
-  KOKKOS_FUNCTION void operator()(int queryIndex) const
-  {
-    auto const &predicate = _predicates(queryIndex);
-    auto const k = getK(predicate);
-    auto const buffer = _buffer(queryIndex);
-
-    // NOTE thinking about making this a precondition
-    if (k < 1)
-      return;
-
-    using PairIndexDistance = typename decltype(_buffer)::PairIndexDistance;
+    using PairIndexDistance = typename Buffer::value_type;
+    using Coordinate = typename PairIndexDistance::second_type;
     struct CompareDistance
     {
       KOKKOS_INLINE_FUNCTION bool operator()(PairIndexDistance const &lhs,

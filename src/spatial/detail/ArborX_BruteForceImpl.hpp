@@ -179,7 +179,7 @@ struct BruteForceImpl
             return;
 
           using PairIndexDistance =
-              typename decltype(buffer_provider)::PairIndexDistance;
+              typename decltype(buffer_provider)::value_type;
           struct CompareDistance
           {
             KOKKOS_INLINE_FUNCTION bool
