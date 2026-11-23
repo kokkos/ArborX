@@ -81,9 +81,12 @@ target_link_libraries(ArborX_Test_Geometry.exe PRIVATE ArborX Boost::unit_test_f
 target_include_directories(ArborX_Test_Geometry.exe PRIVATE ${CMAKE_CURRENT_BINARY_DIR})
 add_test(NAME ArborX_Test_Geometry COMMAND ArborX_Test_Geometry.exe)
 
-set(ARBORX_TEST_QUERY_TREE_SOURCES)
+set(ARBORX_TEST_QUERY_TREE_FLOAT_SOURCES_A)
+set(ARBORX_TEST_QUERY_TREE_DOUBLE_SOURCES_A)
 foreach(_test Callbacks Degenerate ManufacturedSolution ComparisonWithBoost)
   foreach (_precision float double)
+    string(TOUPPER ${_precision} _PRECISION)
+
     file(WRITE "${CMAKE_CURRENT_BINARY_DIR}/tstQueryTree${_test}_BVH_${_precision}.cpp.tmp"
       "#include <ArborX_LinearBVH.hpp>\n"
       "#include <ArborX_Box.hpp>\n"
@@ -101,7 +104,7 @@ foreach(_test Callbacks Degenerate ManufacturedSolution ComparisonWithBoost)
       "${CMAKE_CURRENT_BINARY_DIR}/tstQueryTree${_test}_BVH_${_precision}.cpp.tmp"
       "${CMAKE_CURRENT_BINARY_DIR}/tstQueryTree${_test}_BVH_${_precision}.cpp" COPYONLY
     )
-    list(APPEND ARBORX_TEST_QUERY_TREE_SOURCES "${CMAKE_CURRENT_BINARY_DIR}/tstQueryTree${_test}_BVH_${_precision}.cpp")
+    list(APPEND ARBORX_TEST_QUERY_TREE_${_PRECISION}_SOURCES_A "${CMAKE_CURRENT_BINARY_DIR}/tstQueryTree${_test}_BVH_${_precision}.cpp")
 
     file(WRITE "${CMAKE_CURRENT_BINARY_DIR}/tstQueryTree${_test}_BF_${_precision}.cpp.tmp"
       "#include <ArborX_BruteForce.hpp>\n"
@@ -121,7 +124,7 @@ foreach(_test Callbacks Degenerate ManufacturedSolution ComparisonWithBoost)
       "${CMAKE_CURRENT_BINARY_DIR}/tstQueryTree${_test}_BF_${_precision}.cpp.tmp"
       "${CMAKE_CURRENT_BINARY_DIR}/tstQueryTree${_test}_BF_${_precision}.cpp" COPYONLY
     )
-    list(APPEND ARBORX_TEST_QUERY_TREE_SOURCES "${CMAKE_CURRENT_BINARY_DIR}/tstQueryTree${_test}_BF_${_precision}.cpp")
+    list(APPEND ARBORX_TEST_QUERY_TREE_${_PRECISION}_SOURCES_A "${CMAKE_CURRENT_BINARY_DIR}/tstQueryTree${_test}_BF_${_precision}.cpp")
 
     foreach(_bounding_volume KDOP14 KDOP18) # purposefully ommitting KDOP6 and KDOP26 to reduce the number of instantiations
       file(WRITE "${CMAKE_CURRENT_BINARY_DIR}/tstQueryTree${_test}_BVH_${_bounding_volume}_${_precision}.cpp.tmp"
@@ -147,13 +150,12 @@ foreach(_test Callbacks Degenerate ManufacturedSolution ComparisonWithBoost)
         "${CMAKE_CURRENT_BINARY_DIR}/tstQueryTree${_test}_BVH_${_bounding_volume}_${_precision}.cpp.tmp"
         "${CMAKE_CURRENT_BINARY_DIR}/tstQueryTree${_test}_BVH_${_bounding_volume}_${_precision}.cpp" COPYONLY
       )
-      list(APPEND ARBORX_TEST_QUERY_TREE_SOURCES "${CMAKE_CURRENT_BINARY_DIR}/tstQueryTree${_test}_BVH_${_bounding_volume}_${_precision}.cpp")
+      list(APPEND ARBORX_TEST_QUERY_TREE_${_PRECISION}_SOURCES_A "${CMAKE_CURRENT_BINARY_DIR}/tstQueryTree${_test}_BVH_${_bounding_volume}_${_precision}.cpp")
     endforeach()
   endforeach()
 endforeach()
 
-
-list(APPEND ARBORX_TEST_QUERY_TREE_SOURCES
+list(APPEND ARBORX_TEST_QUERY_TREE_SOURCES_B
   tstQueryTreeCallbackQueryPerThread.cpp
   tstQueryTreeCustomPoint.cpp
   tstQueryTreeIntersectsKDOP.cpp
@@ -164,15 +166,22 @@ list(APPEND ARBORX_TEST_QUERY_TREE_SOURCES
   tstKokkosToolsExecutionSpaceInstances.cpp
   utf_main.cpp
 )
-add_executable(ArborX_Test_QueryTree.exe ${ARBORX_TEST_QUERY_TREE_SOURCES})
-target_link_libraries(ArborX_Test_QueryTree.exe PRIVATE ArborX Boost::unit_test_framework Boost::dynamic_linking)
-# FIXME_SYCL oneDPL messes with namespace std, see https://github.com/oneapi-src/oneDPL/issues/576
-# only needed for the tools annotation test
-if(Kokkos_ENABLE_SYCL)
-  target_compile_definitions(ArborX_Test_QueryTree.exe PRIVATE NANORANGE_NO_STD_FORWARD_DECLARATIONS)
-endif()
-target_include_directories(ArborX_Test_QueryTree.exe PRIVATE ${CMAKE_CURRENT_BINARY_DIR} ${CMAKE_CURRENT_SOURCE_DIR})
-add_test(NAME ArborX_Test_QueryTree COMMAND ArborX_Test_QueryTree.exe)
+
+foreach(_POSTFIX FLOAT_SOURCES_A DOUBLE_SOURCES_A SOURCES_B)
+  string(TOLOWER ${_POSTFIX} _postfix)
+  set(executable_name ArborX_Test_QueryTree_${_postfix}.exe)
+  set(sources "ARBORX_TEST_QUERY_TREE_${_POSTFIX}")
+  list(APPEND ${sources} utf_main.cpp)
+  add_executable(${executable_name} "${${sources}}")
+  target_link_libraries(${executable_name} PRIVATE ArborX Boost::unit_test_framework Boost::dynamic_linking)
+  # FIXME_SYCL oneDPL messes with namespace std, see https://github.com/oneapi-src/oneDPL/issues/576
+  # only needed for the tools annotation test
+  if(Kokkos_ENABLE_SYCL)
+    target_compile_definitions(${executable_name} PRIVATE NANORANGE_NO_STD_FORWARD_DECLARATIONS)
+  endif()
+  target_include_directories(${executable_name} PRIVATE ${CMAKE_CURRENT_BINARY_DIR} ${CMAKE_CURRENT_SOURCE_DIR})
+  add_test(NAME ArborX_Test_QueryTree_${_postfix} COMMAND ${executable_name})
+endforeach()
 
 add_executable(ArborX_Test_DetailsTreeConstruction.exe
   tstDetailsMortonCodes.cpp
