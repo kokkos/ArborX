@@ -89,7 +89,9 @@ public:
 
   template <typename ExecutionSpace, typename UserPredicates,
             typename CallbackOrView, typename View, typename... Args>
-    requires(Kokkos::is_view_v<std::decay_t<View>>)
+    requires(
+        Kokkos::is_view_v<std::decay_t<View>> &&
+        !std::is_same_v<std::decay_t<ExecutionSpace>, Experimental::PerThread>)
   void query(ExecutionSpace const &space, UserPredicates const &user_predicates,
              CallbackOrView &&callback_or_view, View &&view,
              Args &&...args) const
@@ -115,10 +117,42 @@ public:
                              Callback const &callback) const
   {
     ArborX::Details::TreeTraversal<BoundingVolumeHierarchy,
-                                   /* Predicates Dummy */ std::true_type,
+                                   Kokkos::View<Predicate *, MemorySpace>,
                                    Callback, typename Predicate::Tag>
         tree_traversal(*this, callback);
-    tree_traversal(predicate);
+    if constexpr (std::is_same_v<typename Predicate::Tag,
+                                 Details::NearestPredicateTag>)
+    {
+      using Coordinate = decltype(std::declval<Predicate>().distance(
+          std::declval<indexable_type>()));
+      using PairIndexDistance = Kokkos::pair<int, Coordinate>;
+
+      auto query_with_buffer = [&]<int N>() {
+        Kokkos::Array<PairIndexDistance, N> storage;
+        Kokkos::View<PairIndexDistance *, MemorySpace, Kokkos::MemoryUnmanaged>
+            buffer(storage.data(), storage.size());
+        tree_traversal(predicate, buffer);
+      };
+
+      auto const k = getK(predicate);
+      if (k == 1)
+        query_with_buffer.template operator()<1>();
+      else if (k < 1)
+        return;
+      else if (k <= 4)
+        query_with_buffer.template operator()<4>();
+      else if (k <= 8)
+        query_with_buffer.template operator()<8>();
+      else if (k <= 16)
+        query_with_buffer.template operator()<16>();
+      else
+        Kokkos::abort(
+            "ArborX::BVH::query: k must be <= 16 for PerThread nearest query");
+    }
+    else
+    {
+      tree_traversal(predicate);
+    }
   }
 
   KOKKOS_FUNCTION auto const &indexable_get() const
