@@ -84,7 +84,7 @@ struct InsertGenerator
       auto const buffer_size = *(&offset + 1) - offset;
 
       return _callback(raw_predicate, value, [&](ValueType const &v) {
-        int count_old = Kokkos::atomic_fetch_inc(&count);
+        auto count_old = Kokkos::atomic_fetch_inc(&count);
         if (count_old < buffer_size)
           _out(offset + count_old) = v;
       });
@@ -154,6 +154,7 @@ void queryImpl(ExecutionSpace const &space, Tree const &tree,
   // is pre-initialized
 
   static_assert(Kokkos::is_execution_space<ExecutionSpace>{});
+  static_assert(std::is_integral_v<typename OffsetView::value_type>);
 
   auto const n_queries = predicates.size();
 
@@ -198,13 +199,14 @@ void queryImpl(ExecutionSpace const &space, Tree const &tree,
 
     if (!overflow)
     {
-      int n_results;
+      using CountType = typename OffsetView::value_type;
+      CountType n_results;
       Kokkos::parallel_reduce(
           "ArborX::CrsGraphWrapper::compute_underflow",
           Kokkos::RangePolicy(space, 0, n_queries),
-          KOKKOS_LAMBDA(int i, int &update) { update += counts(i); },
+          KOKKOS_LAMBDA(int i, CountType &update) { update += counts(i); },
           n_results);
-      underflow = (n_results < out.extent_int(0));
+      underflow = (n_results < static_cast<CountType>(out.extent(0)));
     }
   }
   else
@@ -245,7 +247,7 @@ void queryImpl(ExecutionSpace const &space, Tree const &tree,
 #endif
   KokkosExt::exclusive_scan(space, offset, offset, 0);
 
-  int const n_results = KokkosExt::lastElement(space, offset);
+  auto const n_results = KokkosExt::lastElement(space, offset);
 
   Kokkos::Profiling::popRegion();
 
@@ -306,8 +308,8 @@ void queryImpl(ExecutionSpace const &space, Tree const &tree,
     Kokkos::parallel_for(
         "ArborX::CrsGraphWrapper::copy_valid_values",
         Kokkos::RangePolicy(space, 0, n_queries), KOKKOS_LAMBDA(int i) {
-          int count = offset(i + 1) - offset(i);
-          for (int j = 0; j < count; ++j)
+          auto count = offset(i + 1) - offset(i);
+          for (decltype(count) j = 0; j < count; ++j)
           {
             tmp_out(offset(i) + j) = out(preallocated_offset(i) + j);
           }
