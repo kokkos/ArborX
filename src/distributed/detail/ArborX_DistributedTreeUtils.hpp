@@ -41,6 +41,9 @@ void filterOutEmptyRanks(ExecutionSpace const &space,
                  attached_volumes, n);
 
   int num_nonempty;
+  #if KOKKOS_VERSION_LESS(5, 3, 0)  // FIXME
+  num_nonempty = 0;
+  #endif
   Kokkos::parallel_scan(
       "ArborX::DistributedTree::DistributedTree::top_tree_skip_empty_ranks",
       Kokkos::RangePolicy<ExecutionSpace>(space, 0, n),

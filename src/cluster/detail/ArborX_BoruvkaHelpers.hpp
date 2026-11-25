@@ -561,6 +561,7 @@ void computeParentsAndReorderEdges(
   using MemorySpace = typename SidedParents::memory_space;
 
   int num_edges = edges.size();
+  KOKKOS_ASSERT(num_edges > 0);
 
   // Encode both a sided parent and an edge weight into long long.
   // This way, once we sort based on this value, edges with the same sided
@@ -703,12 +704,13 @@ void computeParentsAndReorderEdges(
         }
       },
       num_chains);
+  KOKKOS_ASSERT(num_chains > 0);
   Kokkos::resize(Kokkos::WithoutInitializing, chain_offsets, num_chains + 1);
 
   Details::applyPermutation(space, permute, edges);
 
   Kokkos::resize(Kokkos::WithoutInitializing, chain_levels, num_chains + 1);
-  int num_levels = 0;
+  int num_levels;
   Kokkos::parallel_scan(
       "ArborX::MST::compute_chain_levels",
       Kokkos::RangePolicy<ExecutionSpace>(space, 0, num_chains),

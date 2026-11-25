@@ -431,13 +431,18 @@ void computeMergePairs(ExecutionSpace const &space, CorePoints const &is_core,
   Kokkos::Profiling::ScopedRegion guard(prefix);
   prefix += "::";
 
-  auto const num_offsets = ghost_offsets.size();
+  KOKKOS_ASSERT(ghost_ids.size() == ghost_labels.size());
 
   Kokkos::resize(Kokkos::view_alloc(space, Kokkos::WithoutInitializing),
                  merge_pairs, ghost_labels.size());
+
+  if (ghost_labels.size() == 0)
+    return;
+
   int num_merge_pairs;
   Kokkos::parallel_scan(
-      prefix + "process_labels", Kokkos::RangePolicy(space, 0, num_offsets - 1),
+      prefix + "process_labels",
+      Kokkos::RangePolicy(space, 0, ghost_offsets.size() - 1),
       KOKKOS_LAMBDA(int const i, int &update, bool is_final) {
         auto const begin = ghost_offsets(i);
         auto const end = ghost_offsets(i + 1);
@@ -513,6 +518,8 @@ void sortAndFilterMergePairs(ExecutionSpace const &space,
   Kokkos::sort(space, merge_pairs);
 
   int const n = merge_pairs.size();
+  if (n == 0)
+    return;
 
   auto new_merge_pairs =
       KokkosExt::cloneWithoutInitializingNorCopying(space, merge_pairs);
