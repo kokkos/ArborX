@@ -123,6 +123,9 @@ void computeCountsAndOffsets(MPI_Comm comm, std::uint64_t k,
 
   counts.resize(comm_size);
   counts[comm_rank] = k;
+  // clang-tidy produces a false positive:
+  //   buffer type 'unsigned long' does not match MPI datatype 'MPI_UINT64_T'
+  // NOLINTNEXTLINE(mpi-type-mismatch)
   MPI_Allgather(MPI_IN_PLACE, 0, MPI_DATATYPE_NULL, counts.data(), 1,
                 MPI_UINT64_T, comm);
 
