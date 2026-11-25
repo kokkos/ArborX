@@ -126,43 +126,28 @@ public:
       using Coordinate = decltype(std::declval<Predicate>().distance(
           std::declval<indexable_type>()));
       using PairIndexDistance = Kokkos::pair<int, Coordinate>;
+
+      auto query_with_buffer = [&]<int N>() {
+        Kokkos::Array<PairIndexDistance, N> storage;
+        Kokkos::View<PairIndexDistance *, MemorySpace, Kokkos::MemoryUnmanaged>
+            buffer(storage.data(), storage.size());
+        tree_traversal(predicate, buffer);
+      };
+
       auto const k = getK(predicate);
       if (k == 1)
-      {
-        Kokkos::Array<PairIndexDistance, 1> buffer_storage;
-        Kokkos::View<PairIndexDistance *, MemorySpace, Kokkos::MemoryUnmanaged>
-            buffer(buffer_storage.data(), buffer_storage.size());
-        tree_traversal(predicate, buffer);
+        query_with_buffer.template operator()<1>();
+      else if (k < 1)
         return;
-      }
-      if (k < 1)
-        return;
-      if (k <= 4)
-      {
-        Kokkos::Array<PairIndexDistance, 4> buffer_storage;
-        Kokkos::View<PairIndexDistance *, MemorySpace, Kokkos::MemoryUnmanaged>
-            buffer(buffer_storage.data(), buffer_storage.size());
-        tree_traversal(predicate, buffer);
-        return;
-      }
-      if (k <= 8)
-      {
-        Kokkos::Array<PairIndexDistance, 8> buffer_storage;
-        Kokkos::View<PairIndexDistance *, MemorySpace, Kokkos::MemoryUnmanaged>
-            buffer(buffer_storage.data(), buffer_storage.size());
-        tree_traversal(predicate, buffer);
-        return;
-      }
-      if (k <= 16)
-      {
-        Kokkos::Array<PairIndexDistance, 16> buffer_storage;
-        Kokkos::View<PairIndexDistance *, MemorySpace, Kokkos::MemoryUnmanaged>
-            buffer(buffer_storage.data(), buffer_storage.size());
-        tree_traversal(predicate, buffer);
-        return;
-      }
-      Kokkos::abort(
-          "ArborX::BVH::query: k must be <= 16 for PerThread nearest query");
+      else if (k <= 4)
+        query_with_buffer.template operator()<4>();
+      else if (k <= 8)
+        query_with_buffer.template operator()<8>();
+      else if (k <= 16)
+        query_with_buffer.template operator()<16>();
+      else
+        Kokkos::abort(
+            "ArborX::BVH::query: k must be <= 16 for PerThread nearest query");
     }
     else
     {
