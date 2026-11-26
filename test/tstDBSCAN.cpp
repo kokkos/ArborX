@@ -224,6 +224,19 @@ void dbscan_f(ArborX::DBSCAN::Implementation impl,
   };
 
   {
+    Kokkos::View<int *, DeviceType> labels("Testing::labels", 2);
+    auto points = toView<DeviceType, Point>({});
+    Coordinate r = 1;
+
+    ArborX::dbscan(space, points, r, 2, labels, params);
+    BOOST_TEST(labels.extent(0) == 0);
+
+    Kokkos::resize(labels, 2);
+    ArborX::dbscan(space, points, r, 3, labels, params);
+    BOOST_TEST(labels.extent(0) == 0);
+  }
+
+  {
     auto points = toView<DeviceType, Point>({{{0, 0, 0}}, {{1, 1, 1}}});
 
     Coordinate r = std::sqrt(3.1);
