@@ -27,6 +27,8 @@
 #include <misc/ArborX_SortUtils.hpp>
 #include <misc/ArborX_Utils.hpp> // sortObjects
 
+#include <Kokkos_Profiling_ScopedRegion.hpp>
+
 namespace ArborX
 {
 
@@ -219,7 +221,7 @@ void dbscan(ExecutionSpace const &exec_space, Primitives const &primitives,
             double user_eps, int core_min_size, Labels &labels,
             DBSCAN::Parameters const &parameters = DBSCAN::Parameters())
 {
-  Kokkos::Profiling::pushRegion("ArborX::DBSCAN");
+  Kokkos::Profiling::ScopedRegion guard("ArborX::DBSCAN");
 
   namespace KokkosExt = ArborX::Details::KokkosExt;
 
@@ -259,6 +261,12 @@ void dbscan(ExecutionSpace const &exec_space, Primitives const &primitives,
 
   Points points{primitives}; // NOLINT
   int const n = points.size();
+
+  if (n == 0)
+  {
+    Kokkos::resize(exec_space, labels, 0);
+    return;
+  }
 
   Kokkos::View<int *, MemorySpace> num_neigh("ArborX::DBSCAN::num_neighbors",
                                              0);
@@ -513,8 +521,6 @@ void dbscan(ExecutionSpace const &exec_space, Primitives const &primitives,
         if (cluster_sizes(labels(i)) == 1 && (is_special_case || !is_core(i)))
           labels(i) = -1;
       });
-  Kokkos::Profiling::popRegion();
-
   Kokkos::Profiling::popRegion();
 }
 
