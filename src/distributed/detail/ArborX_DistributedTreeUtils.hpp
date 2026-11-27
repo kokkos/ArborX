@@ -126,7 +126,7 @@ void forwardQueries(MPI_Comm comm, ExecutionSpace const &space,
     Kokkos::parallel_for(
         prefix + "::forward_queries_fill_buffer",
         Kokkos::RangePolicy(space, 0, n_queries), KOKKOS_LAMBDA(int q) {
-          for (int i = offset(q); i < offset(q + 1); ++i)
+          for (auto i = offset(q); i < offset(q + 1); ++i)
             export_queries(i) = queries(q);
         });
 
@@ -153,7 +153,7 @@ void forwardQueries(MPI_Comm comm, ExecutionSpace const &space,
     Kokkos::parallel_for(
         prefix + "::forward_queries_fill_ids",
         Kokkos::RangePolicy(space, 0, n_queries), KOKKOS_LAMBDA(int q) {
-          for (int i = offset(q); i < offset(q + 1); ++i)
+          for (auto i = offset(q); i < offset(q + 1); ++i)
             export_ids(i) = q;
         });
 
@@ -188,7 +188,7 @@ void forwardQueries(MPI_Comm comm, ExecutionSpace const &space,
   Kokkos::parallel_for(
       prefix + "::forward_queries_fill_buffer",
       Kokkos::RangePolicy(space, 0, queries.size()), KOKKOS_LAMBDA(int q) {
-        for (int i = offset(q); i < offset(q + 1); ++i)
+        for (auto i = offset(q); i < offset(q + 1); ++i)
           export_queries(i) = queries(q);
       });
 
@@ -211,18 +211,12 @@ void communicateResultsBack(MPI_Comm comm, ExecutionSpace const &space,
   MPI_Comm_rank(comm, &comm_rank);
 
   int const n_fwd_queries = offset.extent_int(0) - 1;
-  int const n_exports = KokkosExt::lastElement(space, offset);
+  auto const n_exports = KokkosExt::lastElement(space, offset);
 
   // We are assuming here that if the same rank is related to multiple batches
   // these batches appear consecutively. Hence, no reordering is necessary.
   Distributor<MemorySpace> distributor(comm);
-  // FIXME Distributor::createFromSends takes two views of the same type by
-  // a const reference.  There were two easy ways out, either take the views by
-  // value or cast at the call site.  I went with the latter.  Proper fix
-  // involves more code cleanup in ArborX_Distributor.hpp than I am
-  // willing to do just now.
-  int const n_imports =
-      distributor.createFromSends(space, ranks, static_cast<Ranks>(offset));
+  auto const n_imports = distributor.createFromSends(space, ranks, offset);
 
   {
     Kokkos::View<int *, MemorySpace> export_ranks(
@@ -245,7 +239,7 @@ void communicateResultsBack(MPI_Comm comm, ExecutionSpace const &space,
     Kokkos::parallel_for(
         "ArborX::DistributedTree::query::fill_buffer",
         Kokkos::RangePolicy(space, 0, n_fwd_queries), KOKKOS_LAMBDA(int q) {
-          for (int i = offset(q); i < offset(q + 1); ++i)
+          for (auto i = offset(q); i < offset(q + 1); ++i)
           {
             export_ids(i) = ids(q);
           }
@@ -375,7 +369,7 @@ void filterResults(ExecutionSpace const &space, Predicates const &queries,
         PriorityQueue queue(UnmanagedStaticVector<PairValueDistance>(
             local_buffer.data(), local_buffer.size()));
 
-        for (int i = offset(q); i < offset(q + 1); ++i)
+        for (auto i = offset(q); i < offset(q + 1); ++i)
           queue.emplace(values(i), distances(i));
 
         int count = 0;

@@ -286,7 +286,7 @@ struct CustomPostCallbackWithAttachment
     Kokkos::parallel_for(
         Kokkos::RangePolicy<ExecutionSpace>(0, n), KOKKOS_CLASS_LAMBDA(int i) {
           auto data = ArborX::getData(queries(i));
-          for (int j = offset(i); j < offset(i + 1); ++j)
+          for (auto j = offset(i); j < offset(i + 1); ++j)
             out(j) = distance(points(in(j).index), origin) + data;
         });
   }
@@ -375,7 +375,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(callback_with_attachment, DeviceType,
   }
   {
     Kokkos::View<float *, DeviceType> custom("Testing::custom", 0);
-    Kokkos::View<int *, DeviceType> offset("Testing::offset", 0);
+    Kokkos::View<std::uint64_t *, DeviceType> offset("Testing::offset", 0);
     tree.query(ExecutionSpace{},
                makeIntersectsWithAttachmentQueries<DeviceType, Box, int>(
                    {{points_host(0), points_host(0)}}, {comm_rank}),
