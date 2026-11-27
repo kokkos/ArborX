@@ -68,13 +68,30 @@ void reallocWithoutInitializing(ExecutionSpace const &space, View &v,
                   layout);
 }
 
+template <typename MemoryTraits>
+struct RemoveUnmanagedMemoryTrait;
+
+template <unsigned T>
+struct RemoveUnmanagedMemoryTrait<Kokkos::MemoryTraits<T>>
+{
+  using type = Kokkos::MemoryTraits<T & ~Kokkos::Unmanaged>;
+};
+
+template <class View>
+using ManagedNonConstView = Kokkos::View<
+    typename View::non_const_data_type, typename View::array_layout,
+    typename View::device_type,
+    typename RemoveUnmanagedMemoryTrait<typename View::memory_traits>::type>;
+
 template <class ExecutionSpace, class View>
-typename View::non_const_type clone(ExecutionSpace const &space, View const &v,
-                                    std::string const &label)
+auto clone(ExecutionSpace const &space, View const &v, std::string const &label)
 {
   static_assert(Kokkos::is_execution_space<ExecutionSpace>::value);
   static_assert(Kokkos::is_view<View>::value);
-  typename View::non_const_type w(
+  static_assert(!View::memory_traits::is_atomic,
+                "ArborX::KokkosExt::clone does not support Views with Atomic "
+                "memory trait");
+  ManagedNonConstView<View> w(
       Kokkos::view_alloc(space, Kokkos::WithoutInitializing, label),
       v.layout());
   Kokkos::deep_copy(space, w, v);
@@ -82,21 +99,23 @@ typename View::non_const_type clone(ExecutionSpace const &space, View const &v,
 }
 
 template <class ExecutionSpace, class View>
-typename View::non_const_type clone(ExecutionSpace const &space, View const &v)
+auto clone(ExecutionSpace const &space, View const &v)
 {
   return clone(space, v, v.label());
 }
 
 template <class ExecutionSpace, class View>
-typename View::non_const_type
-cloneWithoutInitializingNorCopying(ExecutionSpace const &space, View const &v)
+auto cloneWithoutInitializingNorCopying(ExecutionSpace const &space,
+                                        View const &v)
 {
   static_assert(Kokkos::is_execution_space<ExecutionSpace>::value);
   static_assert(Kokkos::is_view<View>::value);
-  return Kokkos::create_mirror(Kokkos::view_alloc(typename View::memory_space{},
-                                                  space,
-                                                  Kokkos::WithoutInitializing),
-                               v);
+  static_assert(!View::memory_traits::is_atomic,
+                "ArborX::KokkosExt::cloneWithoutInitializingNorCopying does "
+                "not support Views with Atomic memory trait");
+  return ManagedNonConstView<View>(
+      Kokkos::view_alloc(space, Kokkos::WithoutInitializing, v.label()),
+      v.layout());
 }
 
 } // namespace ArborX::Details::KokkosExt
