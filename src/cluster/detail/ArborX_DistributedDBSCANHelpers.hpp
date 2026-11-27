@@ -18,6 +18,7 @@
 #include <detail/ArborX_Distributor.hpp>
 #include <detail/ArborX_Predicates.hpp>
 #include <detail/ArborX_TreeConstruction.hpp>
+#include <kokkos_ext/ArborX_KokkosExtFenceOnExit.hpp>
 #include <kokkos_ext/ArborX_KokkosExtKernelStdAlgorithms.hpp>
 #include <kokkos_ext/ArborX_KokkosExtViewHelpers.hpp>
 #include <misc/ArborX_SortUtils.hpp>
@@ -159,11 +160,12 @@ void convertLocalToGlobal(MPI_Comm comm, ExecutionSpace const &space,
       Kokkos::view_alloc(space, Kokkos::WithoutInitializing,
                          prefix + "rank_offsets"),
       offsets.size());
+  // Host offsets must outlive the asynchronous copy
+  KokkosExt::FenceOnExit fence_offsets(prefix + "fence_offsets_copy", space);
   Kokkos::deep_copy(
       space, rank_offsets,
       Kokkos::View<std::uint64_t *, Kokkos::HostSpace, Kokkos::MemoryUnmanaged>(
           offsets.data(), offsets.size()));
-  space.fence(prefix + " (host offsets must outlive the asynchronous copy)");
 
   Kokkos::resize(Kokkos::view_alloc(space, Kokkos::WithoutInitializing), labels,
                  local_labels.size());
