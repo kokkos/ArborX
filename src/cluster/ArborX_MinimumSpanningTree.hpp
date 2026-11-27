@@ -295,6 +295,7 @@ private:
           space, edge_hierarchy_offsets,
           Kokkos::View<int *, Kokkos::HostSpace, Kokkos::MemoryUnmanaged>{
               edge_offsets.data(), edge_offsets.size()});
+      space.fence("ArborX::MST (host edge offsets must outlive the copy)");
 
       Details::computeParentsAndReorderEdges(
           space, edges, edge_hierarchy_offsets, sided_parents,

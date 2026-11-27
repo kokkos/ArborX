@@ -237,6 +237,7 @@ static void gatherGlobalSides(MPI_Comm comm, ExecutionSpace const &space,
   Kokkos::resize(Kokkos::view_alloc(space, Kokkos::WithoutInitializing),
                  global_sides, num_global, extent1, extent2);
   Kokkos::deep_copy(space, global_sides, global_sides_aux);
+  space.fence(prefix + " (staging buffers must outlive the copies)");
 }
 
 struct WallDistanceCallback

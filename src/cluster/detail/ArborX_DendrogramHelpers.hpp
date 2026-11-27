@@ -110,6 +110,9 @@ void dendrogramUnionFind(
       "ArborX::Dendrogram::dendrogram_union_find::copy_to_device");
 
   Kokkos::deep_copy(exec_space, parents, parents_host);
+  exec_space.fence(
+      "ArborX::Dendrogram::dendrogramUnionFind (host staging buffer must "
+      "outlive the copy)");
 
   Kokkos::Profiling::popRegion();
 

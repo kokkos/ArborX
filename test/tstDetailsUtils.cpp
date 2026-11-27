@@ -43,6 +43,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(sort_objects, DeviceType, ARBORX_DEVICE_TYPES)
     auto device_view = Kokkos::create_mirror_view_and_copy(space, host_view);
     auto device_permutation = ArborX::Details::sortObjects(space, device_view);
     Kokkos::deep_copy(space, host_view, device_view);
+    space.fence("Testing::sortObjects (host output must be ready before use)");
 
     // Check that values were sorted properly
     std::vector<int> values_copy = values;
